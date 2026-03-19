@@ -94,6 +94,7 @@ export function CheckoutPage({ onBack, onSuccess }: CheckoutPageProps) {
                     placeholder={t('checkout.addressPlaceholder')}
                   />
                 </div>
+              </motion.div>
             )}
           </AnimatePresence>
 
