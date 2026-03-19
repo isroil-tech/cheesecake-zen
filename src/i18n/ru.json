@@ -73,5 +73,22 @@
     "lightTheme": "Светлая",
     "darkTheme": "Тёмная"
   },
+  "auth": {
+    "phoneLabel": "Номер телефона",
+    "continue": "Продолжить",
+    "otpSent": "Код подтверждения отправлен на",
+    "verify": "Подтвердить",
+    "changePhone": "Изменить номер",
+    "welcome": "Добро пожаловать!",
+    "fillProfile": "Введите ваше имя",
+    "nameLabel": "Имя и фамилия",
+    "namePlaceholder": "Ваше имя и фамилия",
+    "start": "Начать",
+    "invalidPhone": "Неверный номер телефона",
+    "invalidOtp": "Код должен содержать 6 цифр",
+    "nameRequired": "Имя обязательно",
+    "error": "Произошла ошибка",
+    "logout": "Выйти"
+  },
   "currency": "сум"
 }

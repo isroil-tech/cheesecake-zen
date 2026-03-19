@@ -73,5 +73,22 @@
     "lightTheme": "Yorug'",
     "darkTheme": "Qorong'u"
   },
+  "auth": {
+    "phoneLabel": "Telefon raqam",
+    "continue": "Davom etish",
+    "otpSent": "Tasdiqlash kodi yuborildi",
+    "verify": "Tasdiqlash",
+    "changePhone": "Raqamni o'zgartirish",
+    "welcome": "Xush kelibsiz!",
+    "fillProfile": "Ismingizni kiriting",
+    "nameLabel": "Ism-familiya",
+    "namePlaceholder": "Ismingiz va familiyangiz",
+    "start": "Boshlash",
+    "invalidPhone": "Telefon raqam noto'g'ri",
+    "invalidOtp": "Kod 6 ta raqamdan iborat bo'lishi kerak",
+    "nameRequired": "Ism kiritish shart",
+    "error": "Xatolik yuz berdi",
+    "logout": "Chiqish"
+  },
   "currency": "so'm"
 }

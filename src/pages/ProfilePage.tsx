@@ -1,7 +1,9 @@
+import { useState, useEffect } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useLanguageStore } from '@/stores/languageStore';
 import { useThemeStore } from '@/stores/themeStore';
-import { ChevronRight, Globe, MapPin, ClipboardList, User, Sun, Moon } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { ChevronRight, Globe, MapPin, ClipboardList, User, Sun, Moon, LogOut } from 'lucide-react';
 
 interface ProfilePageProps {
   onNavigateOrders: () => void;
@@ -11,6 +13,21 @@ export function ProfilePage({ onNavigateOrders }: ProfilePageProps) {
   const { t } = useTranslation();
   const { language, setLanguage } = useLanguageStore();
   const { theme, setTheme } = useThemeStore();
+  const [profile, setProfile] = useState<{ full_name: string | null; phone: string | null }>({ full_name: null, phone: null });
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase.from('profiles').select('full_name, phone').eq('user_id', user.id).single();
+      if (data) setProfile(data);
+    };
+    fetchProfile();
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
 
   return (
     <div className="pb-20">
@@ -26,8 +43,8 @@ export function ProfilePage({ onNavigateOrders }: ProfilePageProps) {
               <User className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-foreground">User</h2>
-              <p className="text-sm text-muted-foreground">+998 90 123 45 67</p>
+              <h2 className="text-lg font-semibold text-foreground">{profile.full_name || 'User'}</h2>
+              <p className="text-sm text-muted-foreground">{profile.phone || ''}</p>
             </div>
           </div>
         </div>
@@ -108,6 +125,15 @@ export function ProfilePage({ onNavigateOrders }: ProfilePageProps) {
             </div>
           </div>
         </div>
+
+        {/* Logout */}
+        <button
+          onClick={handleLogout}
+          className="w-full bg-card rounded-2xl card-shadow px-5 py-4 flex items-center gap-3 active-scale text-left"
+        >
+          <LogOut className="w-5 h-5 text-destructive" />
+          <span className="text-sm font-medium text-destructive">{t('auth.logout')}</span>
+        </button>
       </div>
     </div>
   );
