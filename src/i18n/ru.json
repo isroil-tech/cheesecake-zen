@@ -38,7 +38,7 @@
     "delivery": "Доставка",
     "pickup": "Самовывоз",
     "address": "Адрес",
-    "addressPlaceholder": "Введите адрес доставки",
+    "addressPlaceholder": "Найти адрес...",
     "comment": "Комментарий",
     "commentPlaceholder": "Дополнительный комментарий (необязательно)",
     "confirm": "Подтвердить заказ",
