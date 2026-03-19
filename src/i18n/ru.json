@@ -38,7 +38,7 @@
     "delivery": "Доставка",
     "pickup": "Самовывоз",
     "address": "Адрес",
-    "addressPlaceholder": "Введите адрес доставки",
+    "addressPlaceholder": "Найти адрес...",
     "comment": "Комментарий",
     "commentPlaceholder": "Дополнительный комментарий (необязательно)",
     "confirm": "Подтвердить заказ",
@@ -66,7 +66,10 @@
     "language": "Язык",
     "addresses": "Сохранённые адреса",
     "orderHistory": "История заказов",
-    "noAddresses": "Нет сохранённых адресов"
+    "noAddresses": "Нет сохранённых адресов",
+    "theme": "Тема",
+    "lightTheme": "Светлая",
+    "darkTheme": "Тёмная"
   },
   "currency": "сум"
 }

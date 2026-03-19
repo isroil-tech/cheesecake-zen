@@ -6,6 +6,7 @@ import { useCartStore } from '@/stores/cartStore';
 import { useOrderStore } from '@/stores/orderStore';
 import { formatPrice } from '@/data/products';
 import { SuccessAnimation } from '@/components/SuccessAnimation';
+import { YandexAddressSearch } from '@/components/YandexAddressSearch';
 
 interface CheckoutPageProps {
   onBack: () => void;
@@ -86,12 +87,13 @@ export function CheckoutPage({ onBack, onSuccess }: CheckoutPageProps) {
                 className="overflow-hidden"
               >
                 <label className="text-sm font-medium text-foreground">{t('checkout.address')}</label>
-                <input
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder={t('checkout.addressPlaceholder')}
-                  className="w-full mt-2 px-4 py-3.5 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30 transition-all"
-                />
+                <div className="mt-2">
+                  <YandexAddressSearch
+                    value={address}
+                    onChange={setAddress}
+                    placeholder={t('checkout.addressPlaceholder')}
+                  />
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

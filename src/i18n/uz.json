@@ -38,7 +38,7 @@
     "delivery": "Yetkazib berish",
     "pickup": "Olib ketish",
     "address": "Manzil",
-    "addressPlaceholder": "Manzilingizni kiriting",
+    "addressPlaceholder": "Manzilni qidiring...",
     "comment": "Izoh",
     "commentPlaceholder": "Qo'shimcha izoh (ixtiyoriy)",
     "confirm": "Tasdiqlash",
@@ -66,7 +66,10 @@
     "language": "Til",
     "addresses": "Saqlangan manzillar",
     "orderHistory": "Buyurtmalar tarixi",
-    "noAddresses": "Saqlangan manzillar yo'q"
+    "noAddresses": "Saqlangan manzillar yo'q",
+    "theme": "Mavzu",
+    "lightTheme": "Yorug'",
+    "darkTheme": "Qorong'u"
   },
   "currency": "so'm"
 }
