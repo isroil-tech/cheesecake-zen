@@ -23,12 +23,7 @@ export const useThemeStore = create<ThemeState>()(
         applyTheme(next);
       },
     }),
-    {
-      name: '77cheesecake-theme',
-      onRehydrate: () => (state) => {
-        if (state) applyTheme(state.theme);
-      },
-    }
+    { name: '77cheesecake-theme' }
   )
 );
 
