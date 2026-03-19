@@ -6,6 +6,7 @@ import { useCartStore } from '@/stores/cartStore';
 import { useOrderStore } from '@/stores/orderStore';
 import { formatPrice } from '@/data/products';
 import { SuccessAnimation } from '@/components/SuccessAnimation';
+import { YandexAddressSearch } from '@/components/YandexAddressSearch';
 
 interface CheckoutPageProps {
   onBack: () => void;
