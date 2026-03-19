@@ -1,0 +1,72 @@
+{
+  "brand": "77Cheesecake",
+  "tagline": "Премиальные чизкейки",
+  "nav": {
+    "home": "Главная",
+    "cart": "Корзина",
+    "orders": "Заказы",
+    "profile": "Профиль"
+  },
+  "home": {
+    "title": "Каталог",
+    "categories": {
+      "all": "Все",
+      "classic": "Классика",
+      "fruit": "Фруктовые",
+      "special": "Особые"
+    }
+  },
+  "product": {
+    "whole": "Целый",
+    "slice": "Кусочек",
+    "slicesLeft": "Осталось {{count}} кусочков",
+    "outOfStock": "Нет в наличии",
+    "lowStock": "Осталось {{count}} шт.",
+    "addToCart": "В корзину",
+    "added": "Добавлено!"
+  },
+  "cart": {
+    "title": "Корзина",
+    "empty": "Корзина пуста",
+    "emptyDesc": "Посмотрите наши продукты",
+    "total": "Итого",
+    "checkout": "Оформить заказ",
+    "remove": "Удалить"
+  },
+  "checkout": {
+    "title": "Оформление",
+    "delivery": "Доставка",
+    "pickup": "Самовывоз",
+    "address": "Адрес",
+    "addressPlaceholder": "Введите адрес доставки",
+    "comment": "Комментарий",
+    "commentPlaceholder": "Дополнительный комментарий (необязательно)",
+    "confirm": "Подтвердить заказ",
+    "success": "Заказ принят!",
+    "orderSummary": "Детали заказа"
+  },
+  "orders": {
+    "title": "Заказы",
+    "empty": "Заказов нет",
+    "emptyDesc": "Сделайте первый заказ",
+    "items": "{{count}} товаров",
+    "status": {
+      "new": "Новый",
+      "accepted": "Принят",
+      "preparing": "Готовится",
+      "ready": "Готов",
+      "delivered": "Доставлен",
+      "cancelled": "Отменён"
+    }
+  },
+  "profile": {
+    "title": "Профиль",
+    "name": "Имя",
+    "phone": "Телефон",
+    "language": "Язык",
+    "addresses": "Сохранённые адреса",
+    "orderHistory": "История заказов",
+    "noAddresses": "Нет сохранённых адресов"
+  },
+  "currency": "сум"
+}

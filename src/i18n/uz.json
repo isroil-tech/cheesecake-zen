@@ -1,0 +1,72 @@
+{
+  "brand": "77Cheesecake",
+  "tagline": "Premium pishloq tortlar",
+  "nav": {
+    "home": "Bosh sahifa",
+    "cart": "Savat",
+    "orders": "Buyurtmalar",
+    "profile": "Profil"
+  },
+  "home": {
+    "title": "Katalog",
+    "categories": {
+      "all": "Hammasi",
+      "classic": "Klassik",
+      "fruit": "Mevali",
+      "special": "Maxsus"
+    }
+  },
+  "product": {
+    "whole": "Butun",
+    "slice": "Bo'lak",
+    "slicesLeft": "{{count}} ta bo'lak qoldi",
+    "outOfStock": "Tugagan",
+    "lowStock": "Faqat {{count}} ta qoldi",
+    "addToCart": "Savatga qo'shish",
+    "added": "Qo'shildi!"
+  },
+  "cart": {
+    "title": "Savat",
+    "empty": "Savat bo'sh",
+    "emptyDesc": "Mahsulotlarni ko'rib chiqing",
+    "total": "Jami",
+    "checkout": "Buyurtma berish",
+    "remove": "O'chirish"
+  },
+  "checkout": {
+    "title": "Buyurtma",
+    "delivery": "Yetkazib berish",
+    "pickup": "Olib ketish",
+    "address": "Manzil",
+    "addressPlaceholder": "Manzilingizni kiriting",
+    "comment": "Izoh",
+    "commentPlaceholder": "Qo'shimcha izoh (ixtiyoriy)",
+    "confirm": "Tasdiqlash",
+    "success": "Buyurtma qabul qilindi!",
+    "orderSummary": "Buyurtma tafsilotlari"
+  },
+  "orders": {
+    "title": "Buyurtmalar",
+    "empty": "Buyurtmalar yo'q",
+    "emptyDesc": "Birinchi buyurtmangizni bering",
+    "items": "{{count}} ta mahsulot",
+    "status": {
+      "new": "Yangi",
+      "accepted": "Qabul qilindi",
+      "preparing": "Tayyorlanmoqda",
+      "ready": "Tayyor",
+      "delivered": "Yetkazildi",
+      "cancelled": "Bekor qilindi"
+    }
+  },
+  "profile": {
+    "title": "Profil",
+    "name": "Ism",
+    "phone": "Telefon",
+    "language": "Til",
+    "addresses": "Saqlangan manzillar",
+    "orderHistory": "Buyurtmalar tarixi",
+    "noAddresses": "Saqlangan manzillar yo'q"
+  },
+  "currency": "so'm"
+}
