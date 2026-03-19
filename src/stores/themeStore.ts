@@ -23,7 +23,15 @@ export const useThemeStore = create<ThemeState>()(
         applyTheme(next);
       },
     }),
-    { name: '77cheesecake-theme' }
+    {
+      name: '77cheesecake-theme',
+    }
+  )
+);
+
+// Apply theme on module load
+const initialTheme = JSON.parse(localStorage.getItem('77cheesecake-theme') || '{}')?.state?.theme;
+if (initialTheme) applyTheme(initialTheme);
   )
 );
 

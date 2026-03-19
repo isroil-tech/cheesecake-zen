@@ -1,6 +1,7 @@
 import { useTranslation } from '@/i18n/useTranslation';
 import { useLanguageStore } from '@/stores/languageStore';
-import { ChevronRight, Globe, MapPin, ClipboardList, User } from 'lucide-react';
+import { useThemeStore } from '@/stores/themeStore';
+import { ChevronRight, Globe, MapPin, ClipboardList, User, Sun, Moon } from 'lucide-react';
 
 interface ProfilePageProps {
   onNavigateOrders: () => void;
@@ -9,6 +10,7 @@ interface ProfilePageProps {
 export function ProfilePage({ onNavigateOrders }: ProfilePageProps) {
   const { t } = useTranslation();
   const { language, setLanguage } = useLanguageStore();
+  const { theme, setTheme } = useThemeStore();
 
   return (
     <div className="pb-20">
@@ -51,6 +53,38 @@ export function ProfilePage({ onNavigateOrders }: ProfilePageProps) {
                 }`}
               >
                 Рус
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Theme */}
+        <div className="bg-card rounded-2xl card-shadow overflow-hidden">
+          <div className="px-5 py-4 flex items-center gap-3">
+            {theme === 'light' ? (
+              <Sun className="w-5 h-5 text-muted-foreground" />
+            ) : (
+              <Moon className="w-5 h-5 text-muted-foreground" />
+            )}
+            <span className="text-sm font-medium text-foreground flex-1">{t('profile.theme')}</span>
+            <div className="flex bg-secondary rounded-lg p-0.5 gap-0.5">
+              <button
+                onClick={() => setTheme('light')}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 active-scale flex items-center gap-1.5 ${
+                  theme === 'light' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
+                }`}
+              >
+                <Sun className="w-3.5 h-3.5" />
+                {t('profile.lightTheme')}
+              </button>
+              <button
+                onClick={() => setTheme('dark')}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 active-scale flex items-center gap-1.5 ${
+                  theme === 'dark' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
+                }`}
+              >
+                <Moon className="w-3.5 h-3.5" />
+                {t('profile.darkTheme')}
               </button>
             </div>
           </div>
