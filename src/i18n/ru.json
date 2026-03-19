@@ -43,7 +43,9 @@
     "commentPlaceholder": "Дополнительный комментарий (необязательно)",
     "confirm": "Подтвердить заказ",
     "success": "Заказ принят!",
-    "orderSummary": "Детали заказа"
+    "orderSummary": "Детали заказа",
+    "selectOnMap": "Выбрать на карте",
+    "hideMap": "Скрыть карту"
   },
   "orders": {
     "title": "Заказы",

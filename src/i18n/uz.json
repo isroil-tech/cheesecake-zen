@@ -43,7 +43,9 @@
     "commentPlaceholder": "Qo'shimcha izoh (ixtiyoriy)",
     "confirm": "Tasdiqlash",
     "success": "Buyurtma qabul qilindi!",
-    "orderSummary": "Buyurtma tafsilotlari"
+    "orderSummary": "Buyurtma tafsilotlari",
+    "selectOnMap": "Xaritadan tanlash",
+    "hideMap": "Xaritani yopish"
   },
   "orders": {
     "title": "Buyurtmalar",
