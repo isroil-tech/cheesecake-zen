@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from '@/i18n/useTranslation';
 
 interface AuthPageProps {
-  onAuth: () => void;
+  onAuth: (phone?: string) => void;
 }
 
 export function AuthPage({ onAuth }: AuthPageProps) {
@@ -42,19 +42,21 @@ export function AuthPage({ onAuth }: AuthPageProps) {
       const email = phoneToEmail(phone);
       const password = defaultPassword(phone);
 
-      // Try sign in first
+      // Try sign in first (existing user)
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (signInError) {
-        // User doesn't exist — go to OTP verification
+        // User doesn't exist — ask for OTP confirmation before registering
         setStep('otp');
         setOtp(['', '', '', '', '', '']);
         setTimeout(() => otpRefs.current[0]?.focus(), 100);
+      } else {
+        // Existing user signed in successfully
+        onAuth(phone);
       }
-      // If sign in succeeds, onAuthStateChange in Index will handle it
     } catch (err) {
       setError(t('auth.error'));
     } finally {
@@ -147,8 +149,12 @@ export function AuthPage({ onAuth }: AuthPageProps) {
             phone: `+${digits}`,
           })
           .eq('user_id', data.user.id);
+
+        // Navigate after registration
+        onAuth(phone);
+      } else {
+        setError(t('auth.error'));
       }
-      // onAuthStateChange will handle navigation
     } catch (err) {
       setError(t('auth.error'));
     } finally {

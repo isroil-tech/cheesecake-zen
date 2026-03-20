@@ -150,10 +150,7 @@
     cursor: not-allowed;
   }
 
-  .location-method-icon {
-    font-size: 22px;
-    line-height: 1;
-  }
+  /* icon styles handled by Lucide className inline */
 
   .location-method-label {
     font-size: 11px;
