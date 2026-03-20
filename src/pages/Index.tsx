@@ -8,12 +8,16 @@ import { CheckoutPage } from '@/pages/CheckoutPage';
 import { PaymentPage } from '@/pages/PaymentPage';
 import { OrdersPage } from '@/pages/OrdersPage';
 import { ProfilePage } from '@/pages/ProfilePage';
+import { AuthPage } from '@/pages/AuthPage';
+import { supabase } from '@/integrations/supabase/client';
+import type { Session } from '@supabase/supabase-js';
 import type { Product } from '@/data/products';
 
 type Tab = 'home' | 'cart' | 'orders' | 'profile';
 type Screen =
   | { type: 'tabs' }
   | { type: 'product'; product: Product }
+  | { type: 'auth'; redirectToCheckout?: boolean }
   | { type: 'checkout' }
   | { type: 'payment'; orderId: string; orderNumber: number; total: number };
 
@@ -21,6 +25,20 @@ const Index = () => {
   const [tab, setTab] = useState<Tab>('home');
   const [screen, setScreen] = useState<Screen>({ type: 'tabs' });
   const [telegramId, setTelegramId] = useState<string>('');
+  const [session, setSession] = useState<Session | null>(null);
+
+  useEffect(() => {
+    // Get Supabase session
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, sess) => {
+      setSession(sess);
+      // If user just logged in and was redirected here for checkout
+      if (sess && screen.type === 'auth' && (screen as any).redirectToCheckout) {
+        setScreen({ type: 'checkout' });
+      }
+    });
+    return () => listener.subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     const tg = window.Telegram?.WebApp;
@@ -35,7 +53,6 @@ const Index = () => {
     if (user?.id) {
       tgId = user.id.toString();
     } else {
-      // Guest fallback — for browser testing outside Telegram
       const stored = localStorage.getItem('guest_telegram_id');
       if (stored) {
         tgId = stored;
@@ -47,7 +64,6 @@ const Index = () => {
 
     setTelegramId(tgId);
 
-    // Auth with backend (creates user if not exists)
     fetch('/api/v1/auth/telegram', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -59,7 +75,31 @@ const Index = () => {
     }).catch(() => {});
   }, []);
 
+  const handleCheckout = () => {
+    if (!session) {
+      // Not authenticated — go to auth, remember to redirect after
+      setScreen({ type: 'auth', redirectToCheckout: true } as any);
+    } else {
+      setScreen({ type: 'checkout' });
+    }
+  };
+
   const renderContent = () => {
+    if (screen.type === 'auth') {
+      return (
+        <AuthPage
+          onAuth={() => {
+            // After auth, go to checkout if that was the intent
+            if ((screen as any).redirectToCheckout) {
+              setScreen({ type: 'checkout' });
+            } else {
+              setScreen({ type: 'tabs' });
+            }
+          }}
+        />
+      );
+    }
+
     if (screen.type === 'product') {
       return (
         <ProductDetailPage
@@ -104,7 +144,7 @@ const Index = () => {
           />
         );
       case 'cart':
-        return <CartPage onCheckout={() => setScreen({ type: 'checkout' })} />;
+        return <CartPage onCheckout={handleCheckout} />;
       case 'orders':
         return <OrdersPage />;
       case 'profile':

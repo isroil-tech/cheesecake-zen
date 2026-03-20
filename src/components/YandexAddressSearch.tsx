@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { MapPin, Search, X, Navigation } from 'lucide-react';
+import { MapPin, Search, X, Navigation, Map } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -157,8 +157,6 @@ export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddr
     );
   };
 
-  // Use Nominatim (OpenStreetMap) for text search — free, no API key needed
-  // Tashkent bounding box for better local results
   const fetchSuggestions = useCallback(
     async (text: string) => {
       if (text.length < 2) {
@@ -168,30 +166,17 @@ export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddr
 
       setLoading(true);
       try {
+        if (!window.ymaps || !window.ymaps.suggest) return;
+        
         const searchText = text.toLowerCase().includes('toshkent') || text.toLowerCase().includes('ташкент')
           ? text
-          : `Toshkent, ${text}`;
+          : `Ташкент, ${text}`;
 
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchText)}&countrycodes=uz&addressdetails=1&limit=5&viewbox=69.1,41.4,69.4,41.2&bounded=1`,
-          { headers: { 'Accept-Language': 'uz,ru' } }
-        );
-        const data = await res.json();
-        const mapped = data.map((item: any) => {
-          // Build a shorter, cleaner display name from address parts
-          const addr = item.address || {};
-          const parts: string[] = [];
-          if (addr.road || addr.street) parts.push(addr.road || addr.street);
-          if (addr.house_number) parts.push(addr.house_number);
-          if (addr.neighbourhood || addr.suburb) parts.push(addr.neighbourhood || addr.suburb);
-          if (addr.city_district) parts.push(addr.city_district);
-          const shortName = parts.length > 0 ? parts.join(', ') : item.display_name.split(',').slice(0, 3).join(',');
-
-          return {
-            displayName: shortName,
-            value: item.display_name,
-          };
-        });
+        const res = await window.ymaps.suggest(searchText, { results: 5 });
+        const mapped = res.map((item: any) => ({
+          displayName: item.displayName || item.value.split(',').slice(0, 3).join(','),
+          value: item.value,
+        }));
         setSuggestions(mapped);
         setShowSuggestions(mapped.length > 0);
       } catch (err) {
@@ -236,7 +221,9 @@ export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddr
           onClick={handleLocate}
           disabled={locating}
         >
-          <span className="location-method-icon">📍</span>
+          {locating
+            ? <span className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+            : <Navigation className="w-5 h-5" />}
           <span className="location-method-label">{t('checkout.sendLocation')}</span>
         </button>
         <button
@@ -247,7 +234,7 @@ export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddr
             setShowSuggestions(false);
           }}
         >
-          <span className="location-method-icon">🗺</span>
+          <Map className="w-5 h-5" />
           <span className="location-method-label">{t('checkout.markOnMap')}</span>
         </button>
         <button
@@ -257,7 +244,7 @@ export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddr
             setShowMap(false);
           }}
         >
-          <span className="location-method-icon">🔍</span>
+          <Search className="w-5 h-5" />
           <span className="location-method-label">{t('checkout.searchAddress')}</span>
         </button>
       </div>
