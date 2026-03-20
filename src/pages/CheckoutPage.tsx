@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useCartStore } from '@/stores/cartStore';
@@ -21,10 +21,27 @@ export function CheckoutPage({ telegramId, onBack, onPayment }: CheckoutPageProp
   const [address, setAddress] = useState('');
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleConfirm = async () => {
     if (loading) return;
+    if (items.length === 0) return;
     setLoading(true);
+    setError('');
+
+    // Get telegramId — try from props, then from Telegram WebApp
+    let tgId = telegramId;
+    if (!tgId) {
+      tgId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id?.toString() || '';
+    }
+
+    if (!tgId) {
+      setError(language === 'ru'
+        ? 'Откройте приложение через Telegram'
+        : 'Ilovani Telegram orqali oching');
+      setLoading(false);
+      return;
+    }
 
     try {
       // Send order to backend API with items from local cart
@@ -32,7 +49,7 @@ export function CheckoutPage({ telegramId, onBack, onPayment }: CheckoutPageProp
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-telegram-id': telegramId || 'anonymous',
+          'x-telegram-id': tgId,
         },
         body: JSON.stringify({
           deliveryType,
@@ -47,6 +64,12 @@ export function CheckoutPage({ telegramId, onBack, onPayment }: CheckoutPageProp
           })),
         }),
       });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || `HTTP ${res.status}`);
+      }
+
       const order = await res.json();
 
       if (order.id) {
@@ -64,10 +87,13 @@ export function CheckoutPage({ telegramId, onBack, onPayment }: CheckoutPageProp
         // Go to payment page
         onPayment(order.id, order.orderNumber, total);
       } else {
-        console.error('Order creation failed:', order);
+        setError(order.error || (language === 'ru' ? 'Ошибка создания заказа' : 'Buyurtma yaratishda xatolik'));
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Order error:', err);
+      setError(language === 'ru'
+        ? 'Не удалось отправить заказ. Проверьте интернет.'
+        : 'Buyurtmani yuborib bo\'lmadi. Internetni tekshiring.');
     }
     setLoading(false);
   };
@@ -172,9 +198,22 @@ export function CheckoutPage({ telegramId, onBack, onPayment }: CheckoutPageProp
 
       {/* Confirm button */}
       <div className="fixed bottom-0 left-0 right-0 p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] bg-background/80 backdrop-blur-xl border-t border-border z-50">
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="flex items-start gap-2 mb-3 p-3 bg-destructive/10 rounded-xl"
+            >
+              <AlertCircle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
+              <p className="text-sm text-destructive">{error}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
         <button
           onClick={handleConfirm}
-          disabled={loading || (deliveryType === 'delivery' && !address.trim())}
+          disabled={loading || (deliveryType === 'delivery' && !address.trim()) || items.length === 0}
           className="w-full py-4 rounded-2xl bg-primary text-primary-foreground text-base font-semibold active-scale transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {loading ? (

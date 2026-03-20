@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { MapPin, Search, X, Map } from 'lucide-react';
+import { MapPin, Search, X, Navigation } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -28,6 +28,7 @@ export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddr
   const [showMap, setShowMap] = useState(false);
   const [loading, setLoading] = useState(false);
   const [ymapsReady, setYmapsReady] = useState(false);
+  const [locating, setLocating] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
   const wrapperRef = useRef<HTMLDivElement>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -120,10 +121,42 @@ export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddr
     }
   };
 
+  // Handle "use my location" button
+  const handleLocate = () => {
+    if (!navigator.geolocation) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
+            { headers: { 'Accept-Language': 'uz,ru' } }
+          );
+          const data = await res.json();
+          if (data.display_name) {
+            setQuery(data.display_name);
+            onChange(data.display_name);
+          }
+        } catch (err) {
+          console.error('Reverse geocode error:', err);
+        } finally {
+          setLocating(false);
+        }
+      },
+      () => {
+        setLocating(false);
+        // Fallback: show map
+        setShowMap(true);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
   // Use Nominatim (OpenStreetMap) for text search — free, no API key needed
   const fetchSuggestions = useCallback(
     async (text: string) => {
-      if (text.length < 3) {
+      if (text.length < 2) {
         setSuggestions([]);
         return;
       }
@@ -135,7 +168,7 @@ export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddr
           : `Toshkent, ${text}`;
 
         const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchText)}&countrycodes=uz&addressdetails=1&limit=6`,
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchText)}&countrycodes=uz&addressdetails=1&limit=5`,
           { headers: { 'Accept-Language': 'uz,ru' } }
         );
         const data = await res.json();
@@ -144,7 +177,7 @@ export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddr
           value: item.display_name,
         }));
         setSuggestions(mapped);
-        setShowSuggestions(true);
+        setShowSuggestions(mapped.length > 0);
       } catch (err) {
         console.error('Search error:', err);
       } finally {
@@ -158,7 +191,7 @@ export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddr
     setQuery(text);
     onChange(text);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => fetchSuggestions(text), 400);
+    debounceRef.current = setTimeout(() => fetchSuggestions(text), 300);
   };
 
   const handleSelect = (suggestion: Suggestion) => {
@@ -180,7 +213,7 @@ export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddr
 
   return (
     <div ref={wrapperRef} className="relative space-y-3">
-      {/* Search input */}
+      {/* Search input with location button */}
       <div className="relative">
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <input
@@ -188,46 +221,72 @@ export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddr
           onChange={(e) => handleInputChange(e.target.value)}
           onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
           placeholder={placeholder || t('checkout.addressPlaceholder')}
-          className="w-full pl-10 pr-10 py-3.5 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+          className="w-full pl-10 pr-20 py-3.5 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30 transition-all"
         />
-        {query && (
+
+        {/* Right side buttons */}
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+          {query && (
+            <button
+              onClick={handleClear}
+              className="w-7 h-7 rounded-full bg-muted-foreground/20 flex items-center justify-center"
+            >
+              <X className="w-3.5 h-3.5 text-muted-foreground" />
+            </button>
+          )}
+          {/* Location button */}
           <button
-            onClick={handleClear}
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-muted-foreground/20 flex items-center justify-center"
+            onClick={handleLocate}
+            disabled={locating}
+            className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center active-scale transition-all"
+            title={t('checkout.selectOnMap')}
           >
-            <X className="w-3 h-3 text-muted-foreground" />
+            {locating ? (
+              <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+            ) : (
+              <Navigation className="w-4 h-4 text-primary" />
+            )}
           </button>
+        </div>
+
+        {/* Loading spinner */}
+        {loading && (
+          <div className="absolute right-[4.5rem] top-1/2 -translate-y-1/2">
+            <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+          </div>
         )}
       </div>
 
-      {/* Suggestions dropdown */}
-      {showSuggestions && suggestions.length > 0 && (
-        <div className="absolute z-50 w-full mt-1.5 bg-card rounded-xl card-shadow border border-border overflow-hidden">
-          {suggestions.map((s, i) => (
-            <button
-              key={i}
-              onClick={() => handleSelect(s)}
-              className="w-full px-4 py-3 flex items-start gap-3 hover:bg-secondary/60 active:bg-secondary transition-colors text-left"
-            >
-              <MapPin className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-              <p className="text-sm text-foreground line-clamp-2">{s.displayName}</p>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {loading && (
-        <div className="absolute right-10 top-3.5">
-          <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-        </div>
-      )}
+      {/* Suggestions dropdown — max 5 */}
+      <AnimatePresence>
+        {showSuggestions && suggestions.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.15 }}
+            className="absolute z-50 w-full mt-1.5 bg-card rounded-xl card-shadow border border-border overflow-hidden"
+          >
+            {suggestions.slice(0, 5).map((s, i) => (
+              <button
+                key={i}
+                onClick={() => handleSelect(s)}
+                className="w-full px-4 py-3 flex items-start gap-3 hover:bg-secondary/60 active:bg-secondary transition-colors text-left"
+              >
+                <MapPin className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                <p className="text-sm text-foreground line-clamp-2">{s.displayName}</p>
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Map toggle button */}
       <button
         onClick={toggleMap}
         className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-secondary text-sm font-medium text-foreground active-scale transition-all"
       >
-        <Map className="w-4 h-4 text-primary" />
+        <MapPin className="w-4 h-4 text-primary" />
         {showMap ? t('checkout.hideMap') : t('checkout.selectOnMap')}
       </button>
 
