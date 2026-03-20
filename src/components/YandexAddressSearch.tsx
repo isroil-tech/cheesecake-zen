@@ -154,6 +154,7 @@ export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddr
   };
 
   // Use Nominatim (OpenStreetMap) for text search — free, no API key needed
+  // Tashkent bounding box for better local results
   const fetchSuggestions = useCallback(
     async (text: string) => {
       if (text.length < 2) {
@@ -168,14 +169,25 @@ export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddr
           : `Toshkent, ${text}`;
 
         const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchText)}&countrycodes=uz&addressdetails=1&limit=5`,
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchText)}&countrycodes=uz&addressdetails=1&limit=5&viewbox=69.1,41.4,69.4,41.2&bounded=1`,
           { headers: { 'Accept-Language': 'uz,ru' } }
         );
         const data = await res.json();
-        const mapped = data.map((item: any) => ({
-          displayName: item.display_name,
-          value: item.display_name,
-        }));
+        const mapped = data.map((item: any) => {
+          // Build a shorter, cleaner display name from address parts
+          const addr = item.address || {};
+          const parts: string[] = [];
+          if (addr.road || addr.street) parts.push(addr.road || addr.street);
+          if (addr.house_number) parts.push(addr.house_number);
+          if (addr.neighbourhood || addr.suburb) parts.push(addr.neighbourhood || addr.suburb);
+          if (addr.city_district) parts.push(addr.city_district);
+          const shortName = parts.length > 0 ? parts.join(', ') : item.display_name.split(',').slice(0, 3).join(',');
+
+          return {
+            displayName: shortName,
+            value: item.display_name,
+          };
+        });
         setSuggestions(mapped);
         setShowSuggestions(mapped.length > 0);
       } catch (err) {

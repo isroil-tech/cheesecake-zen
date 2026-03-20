@@ -35,12 +35,9 @@ export function CheckoutPage({ telegramId, onBack, onPayment }: CheckoutPageProp
       tgId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id?.toString() || '';
     }
 
+    // Fallback: allow guest orders when Telegram context is unavailable
     if (!tgId) {
-      setError(language === 'ru'
-        ? 'Откройте приложение через Telegram'
-        : 'Ilovani Telegram orqali oching');
-      setLoading(false);
-      return;
+      tgId = `guest-${Date.now()}`;
     }
 
     try {
