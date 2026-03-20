@@ -22,6 +22,8 @@ interface YandexAddressSearchProps {
 
 export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddressSearchProps) {
   const { t } = useTranslation();
+  type Mode = 'none' | 'gps' | 'map' | 'search';
+  const [mode, setMode] = useState<Mode>('none');
   const [query, setQuery] = useState(value);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -124,6 +126,8 @@ export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddr
   // Handle "use my location" button
   const handleLocate = () => {
     if (!navigator.geolocation) return;
+    setMode('gps');
+    setShowMap(false);
     setLocating(true);
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -225,97 +229,119 @@ export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddr
 
   return (
     <div ref={wrapperRef} className="relative space-y-3">
-      {/* Search input with location button */}
-      <div className="relative">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <input
-          value={query}
-          onChange={(e) => handleInputChange(e.target.value)}
-          onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-          placeholder={placeholder || t('checkout.addressPlaceholder')}
-          className="w-full pl-10 pr-20 py-3.5 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30 transition-all"
-        />
+      {/* 3 Buttons */}
+      <div className="location-methods">
+        <button
+          className={`location-method-btn ${mode === 'gps' ? 'active' : ''}`}
+          onClick={handleLocate}
+          disabled={locating}
+        >
+          <span className="location-method-icon">📍</span>
+          <span className="location-method-label">{t('checkout.sendLocation')}</span>
+        </button>
+        <button
+          className={`location-method-btn ${mode === 'map' ? 'active' : ''}`}
+          onClick={() => {
+            setMode('map');
+            setShowMap(true);
+            setShowSuggestions(false);
+          }}
+        >
+          <span className="location-method-icon">🗺</span>
+          <span className="location-method-label">{t('checkout.markOnMap')}</span>
+        </button>
+        <button
+          className={`location-method-btn ${mode === 'search' ? 'active' : ''}`}
+          onClick={() => {
+            setMode('search');
+            setShowMap(false);
+          }}
+        >
+          <span className="location-method-icon">🔍</span>
+          <span className="location-method-label">{t('checkout.searchAddress')}</span>
+        </button>
+      </div>
 
-        {/* Right side buttons */}
-        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+      {mode === 'search' && (
+        <div className="relative mt-3">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            value={query}
+            onChange={(e) => handleInputChange(e.target.value)}
+            onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+            placeholder={placeholder || t('checkout.enterAddress')}
+            className="w-full pl-10 pr-10 py-3.5 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+          />
           {query && (
             <button
               onClick={handleClear}
-              className="w-7 h-7 rounded-full bg-muted-foreground/20 flex items-center justify-center"
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-muted-foreground/20 flex items-center justify-center active-scale"
             >
               <X className="w-3.5 h-3.5 text-muted-foreground" />
             </button>
           )}
-          {/* Location button */}
-          <button
-            onClick={handleLocate}
-            disabled={locating}
-            className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center active-scale transition-all"
-            title={t('checkout.selectOnMap')}
-          >
-            {locating ? (
+          {loading && (
+            <div className="absolute right-12 top-1/2 -translate-y-1/2">
               <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-            ) : (
-              <Navigation className="w-4 h-4 text-primary" />
-            )}
-          </button>
-        </div>
+            </div>
+          )}
 
-        {/* Loading spinner */}
-        {loading && (
-          <div className="absolute right-[4.5rem] top-1/2 -translate-y-1/2">
-            <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-          </div>
-        )}
-      </div>
-
-      {/* Suggestions dropdown — max 5 */}
-      <AnimatePresence>
-        {showSuggestions && suggestions.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.15 }}
-            className="absolute z-50 w-full mt-1.5 bg-card rounded-xl card-shadow border border-border overflow-hidden"
-          >
-            {suggestions.slice(0, 5).map((s, i) => (
-              <button
-                key={i}
-                onClick={() => handleSelect(s)}
-                className="w-full px-4 py-3 flex items-start gap-3 hover:bg-secondary/60 active:bg-secondary transition-colors text-left"
+          <AnimatePresence>
+            {showSuggestions && suggestions.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.15 }}
+                className="absolute z-50 w-full mt-1.5 bg-card rounded-xl card-shadow border border-border overflow-hidden"
               >
-                <MapPin className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                <p className="text-sm text-foreground line-clamp-2">{s.displayName}</p>
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Map toggle button */}
-      <button
-        onClick={toggleMap}
-        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-secondary text-sm font-medium text-foreground active-scale transition-all"
-      >
-        <MapPin className="w-4 h-4 text-primary" />
-        {showMap ? t('checkout.hideMap') : t('checkout.selectOnMap')}
-      </button>
+                {suggestions.slice(0, 5).map((s, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleSelect(s)}
+                    className="w-full px-4 py-3 flex items-start gap-3 hover:bg-secondary/60 active:bg-secondary transition-colors text-left"
+                  >
+                    <MapPin className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                    <p className="text-sm text-foreground line-clamp-2">{s.displayName}</p>
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
 
       {/* Map */}
       <AnimatePresence>
-        {showMap && (
+        {mode === 'map' && showMap && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 250, opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="overflow-hidden rounded-xl border border-border"
+            className="mt-3 overflow-hidden rounded-xl border border-border"
           >
             <div ref={mapContainerRef} className="w-full h-[250px]" />
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Result feedback */}
+      {mode !== 'none' && (
+        <div className="location-result mt-3">
+          {mode === 'gps' && locating ? (
+            <div className="location-detecting">
+              <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin mr-2" />
+              {t('checkout.detectingLocation')}
+            </div>
+          ) : query && mode !== 'search' ? (
+            <div className="location-detected">
+              <span className="location-detected-icon">✅</span>
+              <span>{query}</span>
+            </div>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }

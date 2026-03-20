@@ -45,7 +45,15 @@
     "success": "Buyurtma qabul qilindi!",
     "orderSummary": "Buyurtma tafsilotlari",
     "selectOnMap": "Xaritadan tanlash",
-    "hideMap": "Xaritani yopish"
+    "hideMap": "Xaritani yopish",
+    "sendLocation": "Joylashuvni yuborish",
+    "markOnMap": "Xaritadan tanlash",
+    "searchAddress": "Manzilni izlash",
+    "detectingLocation": "Joylashuv aniqlanmoqda...",
+    "enterAddress": "Manzilni kiriting",
+    "searchingAddress": "Izlanmoqda...",
+    "noResults": "Natija topilmadi",
+    "locationDetected": "Joylashuv topildi"
   },
   "orders": {
     "title": "Buyurtmalar",

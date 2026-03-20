@@ -45,7 +45,15 @@
     "success": "Заказ принят!",
     "orderSummary": "Детали заказа",
     "selectOnMap": "Выбрать на карте",
-    "hideMap": "Скрыть карту"
+    "hideMap": "Скрыть карту",
+    "sendLocation": "Отправить локацию",
+    "markOnMap": "На карте",
+    "searchAddress": "Поиск адреса",
+    "detectingLocation": "Определение локации...",
+    "enterAddress": "Введите адрес",
+    "searchingAddress": "Поиск...",
+    "noResults": "Ничего не найдено",
+    "locationDetected": "Локация найдена"
   },
   "orders": {
     "title": "Заказы",
