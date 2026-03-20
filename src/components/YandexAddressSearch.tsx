@@ -38,13 +38,13 @@ export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddr
     setQuery(value);
   }, [value]);
 
-  // Wait for ymaps to be ready
+  // Wait for ymaps to be ready (for map only)
   useEffect(() => {
     const checkYmaps = () => {
       if (window.ymaps) {
         window.ymaps.ready(() => setYmapsReady(true));
       } else {
-        setTimeout(checkYmaps, 200);
+        setTimeout(checkYmaps, 500);
       }
     };
     checkYmaps();
@@ -120,35 +120,45 @@ export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddr
     }
   };
 
+  // Use Nominatim (OpenStreetMap) for text search — free, no API key needed
   const fetchSuggestions = useCallback(
     async (text: string) => {
-      if (!ymapsReady || text.length < 3) {
+      if (text.length < 3) {
         setSuggestions([]);
         return;
       }
 
       setLoading(true);
       try {
-        const results = await window.ymaps.suggest(text);
-        const mapped = results.map((r: any) => ({
-          displayName: r.displayName,
-          value: r.value,
+        const searchText = text.toLowerCase().includes('toshkent') || text.toLowerCase().includes('ташкент')
+          ? text
+          : `Toshkent, ${text}`;
+
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchText)}&countrycodes=uz&addressdetails=1&limit=6`,
+          { headers: { 'Accept-Language': 'uz,ru' } }
+        );
+        const data = await res.json();
+        const mapped = data.map((item: any) => ({
+          displayName: item.display_name,
+          value: item.display_name,
         }));
         setSuggestions(mapped);
         setShowSuggestions(true);
       } catch (err) {
-        console.error('Suggest error:', err);
+        console.error('Search error:', err);
       } finally {
         setLoading(false);
       }
     },
-    [ymapsReady]
+    []
   );
 
   const handleInputChange = (text: string) => {
     setQuery(text);
+    onChange(text);
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => fetchSuggestions(text), 300);
+    debounceRef.current = setTimeout(() => fetchSuggestions(text), 400);
   };
 
   const handleSelect = (suggestion: Suggestion) => {

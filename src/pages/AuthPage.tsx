@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Phone, ArrowRight, Loader2, User as UserIcon } from 'lucide-react';
+import { Phone, ArrowRight, Loader2, User as UserIcon, ShieldCheck } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTranslation } from '@/i18n/useTranslation';
 
@@ -10,11 +10,13 @@ interface AuthPageProps {
 
 export function AuthPage({ onAuth }: AuthPageProps) {
   const { t } = useTranslation();
-  const [step, setStep] = useState<'phone' | 'register'>('phone');
+  const [step, setStep] = useState<'phone' | 'otp' | 'register'>('phone');
   const [phone, setPhone] = useState('+998 ');
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const phoneToEmail = (ph: string) => {
     const digits = ph.replace(/\D/g, '');
@@ -47,8 +49,10 @@ export function AuthPage({ onAuth }: AuthPageProps) {
       });
 
       if (signInError) {
-        // User doesn't exist — go to register
-        setStep('register');
+        // User doesn't exist — go to OTP verification
+        setStep('otp');
+        setOtp(['', '', '', '', '', '']);
+        setTimeout(() => otpRefs.current[0]?.focus(), 100);
       }
       // If sign in succeeds, onAuthStateChange in Index will handle it
     } catch (err) {
@@ -56,6 +60,58 @@ export function AuthPage({ onAuth }: AuthPageProps) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleOtpChange = (index: number, value: string) => {
+    if (value.length > 1) value = value.slice(-1);
+    if (value && !/^\d$/.test(value)) return;
+
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+
+    // Auto-focus next input
+    if (value && index < 5) {
+      otpRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    const newOtp = [...otp];
+    for (let i = 0; i < pasted.length; i++) {
+      newOtp[i] = pasted[i];
+    }
+    setOtp(newOtp);
+    if (pasted.length > 0) {
+      const focusIndex = Math.min(pasted.length, 5);
+      otpRefs.current[focusIndex]?.focus();
+    }
+  };
+
+  const handleOtpSubmit = async () => {
+    const code = otp.join('');
+    if (code.length !== 6) {
+      setError(t('auth.invalidOtp'));
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    // For now, accept any 6-digit code and proceed to register
+    // In production, verify the OTP code with your SMS service
+    setTimeout(() => {
+      setLoading(false);
+      setStep('register');
+    }, 800);
   };
 
   const handleRegister = async () => {
@@ -167,6 +223,70 @@ export function AuthPage({ onAuth }: AuthPageProps) {
               ) : (
                 <>
                   {t('auth.continue')}
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </motion.div>
+        )}
+
+        {/* OTP step */}
+        {step === 'otp' && (
+          <motion.div
+            key="otp"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="space-y-6"
+          >
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <ShieldCheck className="w-8 h-8 text-primary" />
+              </div>
+              <h2 className="text-xl font-bold text-foreground">{t('auth.otpSent')}</h2>
+              <p className="text-sm text-muted-foreground mt-1">{phone}</p>
+            </div>
+
+            {/* OTP inputs */}
+            <div className="flex justify-center gap-2.5" onPaste={handleOtpPaste}>
+              {otp.map((digit, i) => (
+                <input
+                  key={i}
+                  ref={(el) => { otpRefs.current[i] = el; }}
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={1}
+                  value={digit}
+                  onChange={(e) => handleOtpChange(i, e.target.value)}
+                  onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                  className="w-12 h-14 text-center text-xl font-bold rounded-xl bg-secondary text-foreground outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                />
+              ))}
+            </div>
+
+            {/* Phone change link */}
+            <div className="text-center">
+              <button
+                onClick={() => { setStep('phone'); setError(''); setOtp(['', '', '', '', '', '']); }}
+                className="text-xs text-primary font-medium"
+              >
+                {t('auth.changePhone')}
+              </button>
+            </div>
+
+            {error && (
+              <p className="text-sm text-destructive text-center">{error}</p>
+            )}
+
+            <button
+              onClick={handleOtpSubmit}
+              disabled={loading || otp.join('').length !== 6}
+              className="w-full py-4 rounded-2xl bg-primary text-primary-foreground text-base font-semibold active-scale transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  {t('auth.verify')}
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}

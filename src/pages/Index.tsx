@@ -5,51 +5,44 @@ import { HomePage } from '@/pages/HomePage';
 import { ProductDetailPage } from '@/pages/ProductDetailPage';
 import { CartPage } from '@/pages/CartPage';
 import { CheckoutPage } from '@/pages/CheckoutPage';
+import { PaymentPage } from '@/pages/PaymentPage';
 import { OrdersPage } from '@/pages/OrdersPage';
 import { ProfilePage } from '@/pages/ProfilePage';
-import { AuthPage } from '@/pages/AuthPage';
-import { supabase } from '@/integrations/supabase/client';
 import type { Product } from '@/data/products';
-import type { Session } from '@supabase/supabase-js';
 
 type Tab = 'home' | 'cart' | 'orders' | 'profile';
-type Screen = { type: 'tabs' } | { type: 'product'; product: Product } | { type: 'checkout' };
+type Screen =
+  | { type: 'tabs' }
+  | { type: 'product'; product: Product }
+  | { type: 'checkout' }
+  | { type: 'payment'; orderId: string; orderNumber: number; total: number };
 
 const Index = () => {
-  const [session, setSession] = useState<Session | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
   const [tab, setTab] = useState<Tab>('home');
   const [screen, setScreen] = useState<Screen>({ type: 'tabs' });
+  const [telegramId, setTelegramId] = useState<string>('');
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setAuthLoading(false);
-    });
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setAuthLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand();
+      const user = tg.initDataUnsafe?.user;
+      if (user) {
+        setTelegramId(user.id.toString());
+        // Auth with backend
+        fetch('/api/v1/auth/telegram', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            telegramId: user.id.toString(),
+            firstName: user.first_name,
+            lastName: user.last_name,
+          }),
+        }).catch(() => {});
+      }
+    }
   }, []);
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-8 h-8 border-3 border-primary/30 border-t-primary rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  if (!session) {
-    return (
-      <div className="max-w-lg mx-auto">
-        <AuthPage onAuth={() => {}} />
-      </div>
-    );
-  }
 
   const renderContent = () => {
     if (screen.type === 'product') {
@@ -64,7 +57,22 @@ const Index = () => {
     if (screen.type === 'checkout') {
       return (
         <CheckoutPage
+          telegramId={telegramId}
           onBack={() => setScreen({ type: 'tabs' })}
+          onPayment={(orderId, orderNumber, total) => {
+            setScreen({ type: 'payment', orderId, orderNumber, total });
+          }}
+        />
+      );
+    }
+
+    if (screen.type === 'payment') {
+      return (
+        <PaymentPage
+          telegramId={telegramId}
+          orderId={screen.orderId}
+          orderNumber={screen.orderNumber}
+          total={screen.total}
           onSuccess={() => {
             setScreen({ type: 'tabs' });
             setTab('orders');

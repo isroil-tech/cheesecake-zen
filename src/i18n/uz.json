@@ -90,5 +90,19 @@
     "error": "Xatolik yuz berdi",
     "logout": "Chiqish"
   },
+  "payment": {
+    "title": "To'lov",
+    "method": "To'lov usuli",
+    "cash": "Naqd to'lov",
+    "cashDesc": "Kurierga naqd pul bilan to'laysiz",
+    "card": "Karta orqali",
+    "cardDesc": "Kartaga o'tkazing va chekni yuklang",
+    "cardNumber": "Karta raqami",
+    "upload": "Chekni yuklash",
+    "uploadDesc": "To'lov cheki rasmini yuklang",
+    "uploaded": "Chek yuklandi ✓",
+    "confirm": "To'lovni tasdiqlash",
+    "orderInfo": "Buyurtma #{{number}} — {{total}} so'm"
+  },
   "currency": "so'm"
 }
