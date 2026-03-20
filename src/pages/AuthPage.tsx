@@ -100,7 +100,7 @@ export function AuthPage({ onAuth }: AuthPageProps) {
 
   const handleOtpSubmit = async () => {
     const code = otp.join('');
-    if (code.length !== 6) {
+    if (code.length < 4) {
       setError(t('auth.invalidOtp'));
       return;
     }
@@ -108,12 +108,16 @@ export function AuthPage({ onAuth }: AuthPageProps) {
     setLoading(true);
     setError('');
 
-    // For now, accept any 6-digit code and proceed to register
-    // In production, verify the OTP code with your SMS service
+    // TEST MODE: accept "1111" as valid OTP
+    // TODO: replace with real SMS verification when ready
     setTimeout(() => {
       setLoading(false);
-      setStep('register');
-    }, 800);
+      if (code === '1111') {
+        setStep('register');
+      } else {
+        setError(t('auth.invalidOtp'));
+      }
+    }, 600);
   };
 
   const handleRegister = async () => {
