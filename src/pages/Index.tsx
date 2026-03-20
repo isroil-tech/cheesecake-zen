@@ -27,21 +27,36 @@ const Index = () => {
     if (tg) {
       tg.ready();
       tg.expand();
-      const user = tg.initDataUnsafe?.user;
-      if (user) {
-        setTelegramId(user.id.toString());
-        // Auth with backend
-        fetch('/api/v1/auth/telegram', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            telegramId: user.id.toString(),
-            firstName: user.first_name,
-            lastName: user.last_name,
-          }),
-        }).catch(() => {});
+    }
+
+    const user = tg?.initDataUnsafe?.user;
+    let tgId: string;
+
+    if (user?.id) {
+      tgId = user.id.toString();
+    } else {
+      // Guest fallback — for browser testing outside Telegram
+      const stored = localStorage.getItem('guest_telegram_id');
+      if (stored) {
+        tgId = stored;
+      } else {
+        tgId = `guest-${Date.now()}`;
+        localStorage.setItem('guest_telegram_id', tgId);
       }
     }
+
+    setTelegramId(tgId);
+
+    // Auth with backend (creates user if not exists)
+    fetch('/api/v1/auth/telegram', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        telegramId: tgId,
+        firstName: user?.first_name,
+        lastName: user?.last_name,
+      }),
+    }).catch(() => {});
   }, []);
 
   const renderContent = () => {
