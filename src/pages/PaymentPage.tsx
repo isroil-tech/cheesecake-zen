@@ -140,9 +140,9 @@ export function PaymentPage({ telegramId, orderId, orderNumber, total, onSuccess
                 <div className="bg-secondary rounded-2xl p-4 text-center">
                   <p className="text-xs text-muted-foreground mb-2">{t('payment.cardNumber')}</p>
                   <p className="text-2xl font-bold text-foreground tracking-widest font-mono">
-                    8600 1234 5678 9012
+                    8600 4929 3992 2874
                   </p>
-                  <p className="text-xs text-muted-foreground mt-2">77CHEESECAKE</p>
+                  <p className="text-xs text-muted-foreground mt-2">ABRORBEK AXMEDOV</p>
                 </div>
 
                 {/* Upload screenshot */}
