@@ -190,7 +190,7 @@ export function AuthPage({ onAuth }: AuthPageProps) {
       >
         {/* Brand */}
         <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-foreground tracking-tight">77CHEESECAKE</h1>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">77Cheesecake</h1>
           <p className="text-sm text-muted-foreground mt-2">{t('tagline')}</p>
         </div>
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CreditCard, Banknote, Upload, Check, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -19,6 +19,18 @@ export function PaymentPage({ telegramId, orderId, orderNumber, total, onSuccess
   const [screenshot, setScreenshot] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [cardNumber, setCardNumber] = useState('8600 4929 3992 2874');
+  const [cardHolder, setCardHolder] = useState('ABRORBEK AXMEDOV');
+
+  useEffect(() => {
+    fetch('/api/v1/settings')
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (d?.cardNumber) setCardNumber(d.cardNumber);
+        if (d?.cardHolder) setCardHolder(d.cardHolder);
+      })
+      .catch(() => {});
+  }, []);
 
   const handleScreenshot = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -140,9 +152,9 @@ export function PaymentPage({ telegramId, orderId, orderNumber, total, onSuccess
                 <div className="bg-secondary rounded-2xl p-4 text-center">
                   <p className="text-xs text-muted-foreground mb-2">{t('payment.cardNumber')}</p>
                   <p className="text-2xl font-bold text-foreground tracking-widest font-mono">
-                    8600 4929 3992 2874
+                    {cardNumber}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-2">ABRORBEK AXMEDOV</p>
+                  <p className="text-xs text-muted-foreground mt-2">{cardHolder}</p>
                 </div>
 
                 {/* Upload screenshot */}

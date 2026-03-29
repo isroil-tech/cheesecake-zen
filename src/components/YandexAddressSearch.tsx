@@ -17,10 +17,11 @@ interface Suggestion {
 interface YandexAddressSearchProps {
   value: string;
   onChange: (address: string) => void;
+  onLocationChange?: (lat: number, lon: number) => void;
   placeholder?: string;
 }
 
-export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddressSearchProps) {
+export function YandexAddressSearch({ value, onChange, onLocationChange, placeholder }: YandexAddressSearchProps) {
   const { t } = useTranslation();
   type Mode = 'none' | 'gps' | 'map' | 'search';
   const [mode, setMode] = useState<Mode>('none');
@@ -41,12 +42,14 @@ export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddr
     setQuery(value);
   }, [value]);
 
-  // Wait for ymaps to be ready (for map only)
+  // Wait for ymaps to be ready
   useEffect(() => {
+    let attempts = 0;
     const checkYmaps = () => {
       if (window.ymaps) {
         window.ymaps.ready(() => setYmapsReady(true));
-      } else {
+      } else if (attempts < 30) {
+        attempts++;
         setTimeout(checkYmaps, 500);
       }
     };
@@ -63,46 +66,59 @@ export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddr
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Initialize map when shown
+  // Initialize map when showMap becomes true and ymaps is ready
   useEffect(() => {
-    if (!showMap || !ymapsReady || !mapContainerRef.current) return;
-    if (mapInstanceRef.current) return;
+    if (!showMap || !ymapsReady) return;
 
-    const map = new window.ymaps.Map(mapContainerRef.current, {
-      center: [41.2995, 69.2401], // Tashkent
-      zoom: 12,
-      controls: ['zoomControl', 'geolocationControl'],
-    });
+    // Use rAF to ensure DOM has updated and container is visible
+    const initMap = () => {
+      const container = mapContainerRef.current;
+      if (!container || mapInstanceRef.current) return;
 
-    const placemark = new window.ymaps.Placemark(
-      map.getCenter(),
-      {},
-      {
-        draggable: true,
-        preset: 'islands#redDotIcon',
+      try {
+        const map = new window.ymaps.Map(container, {
+          center: [41.2995, 69.2401], // Tashkent
+          zoom: 12,
+          controls: ['zoomControl', 'geolocationControl'],
+        });
+
+        const placemark = new window.ymaps.Placemark(
+          map.getCenter(),
+          {},
+          {
+            draggable: true,
+            preset: 'islands#redDotIcon',
+          }
+        );
+
+        map.geoObjects.add(placemark);
+        placemarkRef.current = placemark;
+        mapInstanceRef.current = map;
+
+        // On map click — move placemark and geocode
+        map.events.add('click', (e: any) => {
+          const coords = e.get('coords');
+          placemark.geometry.setCoordinates(coords);
+          geocodeCoords(coords);
+        });
+
+        // On placemark drag end
+        placemark.events.add('dragend', () => {
+          const coords = placemark.geometry.getCoordinates();
+          geocodeCoords(coords);
+        });
+      } catch (err) {
+        console.error('Map init error:', err);
       }
-    );
+    };
 
-    map.geoObjects.add(placemark);
-    placemarkRef.current = placemark;
-    mapInstanceRef.current = map;
-
-    // On map click — move placemark and geocode
-    map.events.add('click', (e: any) => {
-      const coords = e.get('coords');
-      placemark.geometry.setCoordinates(coords);
-      geocodeCoords(coords);
-    });
-
-    // On placemark drag end
-    placemark.events.add('dragend', () => {
-      const coords = placemark.geometry.getCoordinates();
-      geocodeCoords(coords);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(initMap);
     });
 
     return () => {
       if (mapInstanceRef.current) {
-        mapInstanceRef.current.destroy();
+        try { mapInstanceRef.current.destroy(); } catch (_) {}
         mapInstanceRef.current = null;
         placemarkRef.current = null;
       }
@@ -111,12 +127,29 @@ export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddr
 
   const geocodeCoords = async (coords: number[]) => {
     try {
-      const res = await window.ymaps.geocode(coords);
-      const firstObj = res.geoObjects.get(0);
-      if (firstObj) {
-        const address = firstObj.getAddressLine();
-        setQuery(address);
-        onChange(address);
+      const [lat, lon] = coords;
+      // Try ymaps geocode first
+      if (window.ymaps?.geocode) {
+        const res = await window.ymaps.geocode(coords);
+        const firstObj = res.geoObjects.get(0);
+        if (firstObj) {
+          const address = firstObj.getAddressLine();
+          setQuery(address);
+          onChange(address);
+          onLocationChange?.(lat, lon);
+          return;
+        }
+      }
+      // Fallback: Nominatim
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`,
+        { headers: { 'Accept-Language': 'uz,ru' } }
+      );
+      const data = await res.json();
+      if (data.display_name) {
+        setQuery(data.display_name);
+        onChange(data.display_name);
+        onLocationChange?.(lat, lon);
       }
     } catch (err) {
       console.error('Geocode error:', err);
@@ -133,6 +166,22 @@ export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddr
       async (pos) => {
         const { latitude, longitude } = pos.coords;
         try {
+          // Try to reverse-geocode with ymaps if ready
+          if (ymapsReady && window.ymaps?.geocode) {
+            try {
+              const res = await window.ymaps.geocode([latitude, longitude]);
+              const firstObj = res.geoObjects.get(0);
+              if (firstObj) {
+                const address = firstObj.getAddressLine();
+                setQuery(address);
+                onChange(address);
+                onLocationChange?.(latitude, longitude);
+                setLocating(false);
+                return;
+              }
+            } catch (_) {}
+          }
+          // Fallback: Nominatim
           const res = await fetch(
             `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
             { headers: { 'Accept-Language': 'uz,ru' } }
@@ -142,8 +191,10 @@ export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddr
             setQuery(data.display_name);
             onChange(data.display_name);
           }
+          onLocationChange?.(latitude, longitude);
         } catch (err) {
           console.error('Reverse geocode error:', err);
+          onLocationChange?.(latitude, longitude);
         } finally {
           setLocating(false);
         }
@@ -151,27 +202,27 @@ export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddr
       () => {
         setLocating(false);
         // Fallback: show map
+        setMode('map');
         setShowMap(true);
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
   };
 
-  const fetchSuggestions = useCallback(
-    async (text: string) => {
-      if (text.length < 2) {
-        setSuggestions([]);
-        return;
-      }
+  const fetchSuggestions = useCallback(async (text: string) => {
+    if (text.length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
 
-      setLoading(true);
-      try {
-        if (!window.ymaps || !window.ymaps.suggest) return;
-        
+    setLoading(true);
+    try {
+      // Try ymaps.suggest first
+      if (ymapsReady && window.ymaps?.suggest) {
         const searchText = text.toLowerCase().includes('toshkent') || text.toLowerCase().includes('ташкент')
           ? text
           : `Ташкент, ${text}`;
-
         const res = await window.ymaps.suggest(searchText, { results: 5 });
         const mapped = res.map((item: any) => ({
           displayName: item.displayName || item.value.split(',').slice(0, 3).join(','),
@@ -179,14 +230,27 @@ export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddr
         }));
         setSuggestions(mapped);
         setShowSuggestions(mapped.length > 0);
-      } catch (err) {
-        console.error('Search error:', err);
-      } finally {
-        setLoading(false);
+        return;
       }
-    },
-    []
-  );
+
+      // Fallback: Nominatim search
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent('Toshkent ' + text)}&limit=5&addressdetails=1`,
+        { headers: { 'Accept-Language': 'uz,ru' } }
+      );
+      const data = await res.json();
+      const mapped: Suggestion[] = data.map((item: any) => ({
+        displayName: item.display_name,
+        value: item.display_name,
+      }));
+      setSuggestions(mapped);
+      setShowSuggestions(mapped.length > 0);
+    } catch (err) {
+      console.error('Search error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [ymapsReady]);
 
   const handleInputChange = (text: string) => {
     setQuery(text);
@@ -205,10 +269,6 @@ export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddr
     setQuery('');
     onChange('');
     setSuggestions([]);
-  };
-
-  const toggleMap = () => {
-    setShowMap((prev) => !prev);
     setShowSuggestions(false);
   };
 
@@ -249,6 +309,7 @@ export function YandexAddressSearch({ value, onChange, placeholder }: YandexAddr
         </button>
       </div>
 
+      {/* Search input */}
       {mode === 'search' && (
         <div className="relative mt-3">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

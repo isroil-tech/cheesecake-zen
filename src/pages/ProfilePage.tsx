@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useLanguageStore } from '@/stores/languageStore';
 import { useThemeStore } from '@/stores/themeStore';
@@ -12,9 +13,30 @@ export function ProfilePage({ onNavigateOrders }: ProfilePageProps) {
   const { language, setLanguage } = useLanguageStore();
   const { theme, setTheme } = useThemeStore();
 
-  // Get name from Telegram
   const tg = window.Telegram?.WebApp;
-  const userName = tg?.initDataUnsafe?.user?.first_name || 'User';
+  const tgUser = tg?.initDataUnsafe?.user;
+  const telegramId = tgUser?.id?.toString() || localStorage.getItem('guest_telegram_id') || '';
+
+  const [userName, setUserName] = useState(
+    tgUser ? `${tgUser.first_name || ''} ${tgUser.last_name || ''}`.trim() || 'User' : 'User'
+  );
+  const [userPhone, setUserPhone] = useState('');
+
+  useEffect(() => {
+    if (!telegramId) return;
+    fetch('/api/v1/users/me', {
+      headers: { 'x-telegram-id': telegramId },
+    })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (d && !d.error) {
+          const name = [d.firstName, d.lastName].filter(Boolean).join(' ').trim();
+          if (name) setUserName(name);
+          if (d.phone) setUserPhone(d.phone);
+        }
+      })
+      .catch(() => {});
+  }, [telegramId]);
 
   return (
     <div className="pb-20">
@@ -31,6 +53,7 @@ export function ProfilePage({ onNavigateOrders }: ProfilePageProps) {
             </div>
             <div>
               <h2 className="text-lg font-semibold text-foreground">{userName}</h2>
+              {userPhone && <p className="text-sm text-muted-foreground mt-0.5">{userPhone}</p>}
             </div>
           </div>
         </div>

@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ArrowLeft, Loader2, AlertCircle, Phone, Building2, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useCartStore } from '@/stores/cartStore';
 import { useOrderStore } from '@/stores/orderStore';
 import { formatPrice } from '@/data/products';
-import { YandexAddressSearch } from '@/components/YandexAddressSearch';
+
 
 interface CheckoutPageProps {
   telegramId: string;
@@ -19,9 +19,41 @@ export function CheckoutPage({ telegramId, onBack, onPayment }: CheckoutPageProp
   const addOrder = useOrderStore((s) => s.addOrder);
   const [deliveryType, setDeliveryType] = useState<'delivery' | 'pickup'>('delivery');
   const [address, setAddress] = useState('');
+  const [latitude, setLatitude] = useState<number | undefined>();
+  const [longitude, setLongitude] = useState<number | undefined>();
+  const [extraPhone, setExtraPhone] = useState('');
+  const [floor, setFloor] = useState('');
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Profile info from backend (Fix 4)
+  const [userPhone, setUserPhone] = useState('');
+  const [userName, setUserName] = useState('');
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      let tgId = telegramId;
+      if (!tgId) tgId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id?.toString() || '';
+      if (!tgId) return;
+      try {
+        const res = await fetch('/api/v1/users/me', {
+          headers: { 'x-telegram-id': tgId },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.phone) setUserPhone(data.phone);
+          if (data.firstName) setUserName(data.firstName + (data.lastName ? ' ' + data.lastName : ''));
+        }
+      } catch (_) {}
+    };
+    fetchProfile();
+  }, [telegramId]);
+
+  const handleLocationChange = (lat: number, lon: number) => {
+    setLatitude(lat);
+    setLongitude(lon);
+  };
 
   const handleConfirm = async () => {
     if (loading) return;
@@ -41,7 +73,20 @@ export function CheckoutPage({ telegramId, onBack, onPayment }: CheckoutPageProp
     }
 
     try {
-      // Send order to backend API with items from local cart
+      if (userName || userPhone) {
+        await fetch('/api/v1/users/profile', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-telegram-id': tgId,
+          },
+          body: JSON.stringify({
+            firstName: userName,
+            phone: userPhone,
+          }),
+        }).catch(() => {});
+      }
+
       const res = await fetch('/api/v1/orders', {
         method: 'POST',
         headers: {
@@ -51,6 +96,10 @@ export function CheckoutPage({ telegramId, onBack, onPayment }: CheckoutPageProp
         body: JSON.stringify({
           deliveryType,
           address: deliveryType === 'delivery' ? address : undefined,
+          latitude: deliveryType === 'delivery' ? latitude : undefined,
+          longitude: deliveryType === 'delivery' ? longitude : undefined,
+          extraPhone: extraPhone || undefined,
+          floor: deliveryType === 'delivery' ? (floor || undefined) : undefined,
           comment: comment || undefined,
           items: items.map((item) => ({
             productId: item.productId,
@@ -70,7 +119,6 @@ export function CheckoutPage({ telegramId, onBack, onPayment }: CheckoutPageProp
       const order = await res.json();
 
       if (order.id) {
-        // Save to local store too
         addOrder({
           items: [...items],
           total: getTotalPrice(),
@@ -80,8 +128,6 @@ export function CheckoutPage({ telegramId, onBack, onPayment }: CheckoutPageProp
         });
         const total = getTotalPrice();
         clearCart();
-
-        // Go to payment page
         onPayment(order.id, order.orderNumber, total);
       } else {
         setError(order.error || (language === 'ru' ? 'Ошибка создания заказа' : 'Buyurtma yaratishda xatolik'));
@@ -113,6 +159,36 @@ export function CheckoutPage({ telegramId, onBack, onPayment }: CheckoutPageProp
       </div>
 
       <div className="px-5 space-y-6">
+        {/* Profile info editable */}
+        <div className="space-y-4">
+          <div>
+            <label className="text-sm font-medium text-foreground flex items-center gap-2 mb-2">
+              <User className="w-4 h-4" />
+              {language === 'ru' ? 'Имя и фамилия' : 'Ism familiya'}
+            </label>
+            <input
+              type="text"
+              value={userName}
+              onChange={(e) => setUserName(e.target.value)}
+              placeholder={language === 'ru' ? 'Ваше имя' : 'Ismingiz'}
+              className="w-full px-4 py-3.5 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-foreground flex items-center gap-2 mb-2">
+              <Phone className="w-4 h-4" />
+              {language === 'ru' ? 'Телефон номер' : 'Telefon raqam'}
+            </label>
+            <input
+              type="tel"
+              value={userPhone}
+              onChange={(e) => setUserPhone(e.target.value)}
+              placeholder="+998 ..."
+              className="w-full px-4 py-3.5 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+            />
+          </div>
+        </div>
+
         {/* Delivery / Pickup */}
         <div className="flex bg-secondary rounded-xl p-1 gap-1">
           <button
@@ -137,7 +213,7 @@ export function CheckoutPage({ telegramId, onBack, onPayment }: CheckoutPageProp
           </button>
         </div>
 
-        {/* Address */}
+        {/* Address section */}
         <AnimatePresence>
           {deliveryType === 'delivery' && (
             <motion.div
@@ -149,10 +225,42 @@ export function CheckoutPage({ telegramId, onBack, onPayment }: CheckoutPageProp
             >
               <label className="text-sm font-medium text-foreground">{t('checkout.address')}</label>
               <div className="mt-2">
-                <YandexAddressSearch
+                <textarea
                   value={address}
-                  onChange={setAddress}
+                  onChange={(e) => setAddress(e.target.value)}
                   placeholder={t('checkout.addressPlaceholder')}
+                  rows={2}
+                  className="w-full px-4 py-3.5 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30 transition-all resize-none"
+                />
+              </div>
+
+              {/* Extra phone (Fix 4 — qo'shimcha raqam ixtiyoriy) */}
+              <div className="mt-4">
+                <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <Phone className="w-4 h-4" />
+                  {language === 'ru' ? 'Доп. номер (необязательно)' : "Qo'shimcha raqam (ixtiyoriy)"}
+                </label>
+                <input
+                  type="tel"
+                  value={extraPhone}
+                  onChange={(e) => setExtraPhone(e.target.value)}
+                  placeholder="+998 ..."
+                  className="w-full mt-2 px-4 py-3.5 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+                />
+              </div>
+
+              {/* Floor */}
+              <div className="mt-4">
+                <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <Building2 className="w-4 h-4" />
+                  {language === 'ru' ? 'Этаж / квартира' : 'Qavat / xonadon'}
+                </label>
+                <input
+                  type="text"
+                  value={floor}
+                  onChange={(e) => setFloor(e.target.value)}
+                  placeholder={language === 'ru' ? 'Напр: 3-й этаж, кв. 12' : 'Mas: 3-qavat, 12-xonadon'}
+                  className="w-full mt-2 px-4 py-3.5 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30 transition-all"
                 />
               </div>
             </motion.div>
@@ -210,7 +318,7 @@ export function CheckoutPage({ telegramId, onBack, onPayment }: CheckoutPageProp
         </AnimatePresence>
         <button
           onClick={handleConfirm}
-          disabled={loading || (deliveryType === 'delivery' && !address.trim()) || items.length === 0}
+          disabled={loading || (deliveryType === 'delivery' && !address.trim()) || items.length === 0 || !userName.trim() || !userPhone.trim()}
           className="w-full py-4 rounded-2xl bg-primary text-primary-foreground text-base font-semibold active-scale transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {loading ? (
