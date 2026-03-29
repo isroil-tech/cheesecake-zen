@@ -20,7 +20,7 @@ type Screen =
   | { type: 'product'; product: Product }
   | { type: 'auth'; redirectToCheckout?: boolean }
   | { type: 'checkout' }
-  | { type: 'payment'; orderId: string; orderNumber: number; total: number };
+  | { type: 'payment'; orderId: string; orderNumber: number; total: number; deliveryType: string };
 
 const Index = () => {
   const [tab, setTab] = useState<Tab>('home');
@@ -118,8 +118,8 @@ const Index = () => {
         <CheckoutPage
           telegramId={telegramId}
           onBack={() => setScreen({ type: 'tabs' })}
-          onPayment={(orderId, orderNumber, total) => {
-            setScreen({ type: 'payment', orderId, orderNumber, total });
+          onPayment={(orderId, orderNumber, total, deliveryType) => {
+            setScreen({ type: 'payment', orderId, orderNumber, total, deliveryType });
           }}
         />
       );
@@ -132,6 +132,7 @@ const Index = () => {
           orderId={screen.orderId}
           orderNumber={screen.orderNumber}
           total={screen.total}
+          deliveryType={screen.deliveryType}
           onSuccess={() => {
             setScreen({ type: 'tabs' });
             setTab('orders');

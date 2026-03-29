@@ -12,7 +12,7 @@ import { formatPrice } from '@/data/products';
 interface CheckoutPageProps {
   telegramId: string;
   onBack: () => void;
-  onPayment: (orderId: string, orderNumber: number, total: number) => void;
+  onPayment: (orderId: string, orderNumber: number, total: number, deliveryType: string) => void;
 }
 
 // Resolve telegram ID from all possible sources
@@ -256,7 +256,7 @@ export function CheckoutPage({ telegramId, onBack, onPayment }: CheckoutPageProp
           comment: comment || undefined });
         const total = getTotalPrice();
         clearCart();
-        onPayment(order.id, order.orderNumber, total);
+        onPayment(order.id, order.orderNumber, total, deliveryType);
       } else {
         setError(order.error || 'Buyurtma yaratishda xatolik');
       }
@@ -594,7 +594,7 @@ document.getElementById('btn').onclick = function(){
                     <Phone className="w-4 h-4 text-primary mt-0.5" />
                     <div>
                       <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{language === 'ru' ? 'Телефон' : 'Telefon'}</p>
-                      <p className="text-sm font-semibold text-foreground mt-0.5">+998 94 081 34 31</p>
+                      <a href="tel:+998940813431" className="text-sm font-semibold text-primary mt-0.5 inline-block hover:underline">+998 94 081 34 31</a>
                     </div>
                   </div>
 
@@ -602,7 +602,23 @@ document.getElementById('btn').onclick = function(){
                     <Instagram className="w-4 h-4 text-primary mt-0.5" />
                     <div>
                       <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Instagram</p>
-                      <p className="text-sm font-semibold text-foreground mt-0.5">@77cheesecake.uz</p>
+                      <a 
+                        href="#" 
+                        onClick={(e) => {
+                           e.preventDefault();
+                           const tg = window.Telegram?.WebApp;
+                           // @ts-ignore
+                           if (tg && typeof tg.openLink === 'function') {
+                             // @ts-ignore
+                             tg.openLink('https://instagram.com/77cheesecake.uz');
+                           } else {
+                             window.open('https://instagram.com/77cheesecake.uz', '_blank');
+                           }
+                        }} 
+                        className="text-sm font-semibold text-primary mt-0.5 inline-block hover:underline"
+                      >
+                        @77cheesecake.uz
+                      </a>
                     </div>
                   </div>
                 </div>
