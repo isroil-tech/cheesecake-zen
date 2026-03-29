@@ -76,12 +76,7 @@ const Index = () => {
   }, []);
 
   const handleCheckout = () => {
-    if (!session) {
-      // Not authenticated — go to auth, remember to redirect after
-      setScreen({ type: 'auth', redirectToCheckout: true } as any);
-    } else {
-      setScreen({ type: 'checkout' });
-    }
+    setScreen({ type: 'checkout' });
   };
 
   const renderContent = () => {
