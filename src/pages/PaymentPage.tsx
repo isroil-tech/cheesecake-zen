@@ -68,13 +68,7 @@ export function PaymentPage({ telegramId, orderId, orderNumber, total, onSuccess
 
   return (
     <>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="min-h-screen bg-background pb-32"
-      >
+      <div className="min-h-screen bg-background pb-32">
         {/* Header */}
         <div className="px-5 pt-12 pb-4">
           <h1 className="text-[22px] font-bold text-foreground">{t('payment.title')}</h1>
@@ -181,7 +175,7 @@ export function PaymentPage({ telegramId, orderId, orderNumber, total, onSuccess
             )}
           </button>
         </div>
-      </motion.div>
+      </div>
 
       <AnimatePresence>
         {showSuccess && (

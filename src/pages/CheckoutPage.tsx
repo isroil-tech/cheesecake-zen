@@ -347,13 +347,7 @@ document.getElementById('btn').onclick = function(){
 
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      className="min-h-screen bg-background pb-32"
-    >
+    <div className="min-h-screen bg-background pb-32">
       {/* Inline map modal */}
       <AnimatePresence>
         {showMap && (
@@ -637,6 +631,6 @@ document.getElementById('btn').onclick = function(){
           {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : t('checkout.confirm')}
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }

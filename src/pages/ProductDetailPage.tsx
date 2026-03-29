@@ -46,13 +46,7 @@ export function ProductDetailPage({ product, onBack }: ProductDetailProps) {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-      className="min-h-screen bg-background"
-    >
+    <div className="min-h-screen bg-background">
       {/* Hero image */}
       <div className="relative">
         <div className="aspect-[4/3] overflow-hidden bg-secondary">
@@ -140,6 +134,6 @@ export function ProductDetailPage({ product, onBack }: ProductDetailProps) {
           </button>
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }

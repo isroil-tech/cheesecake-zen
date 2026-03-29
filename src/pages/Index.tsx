@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { BottomNav } from '@/components/BottomNav';
 import { HomePage } from '@/pages/HomePage';
 import { ProductDetailPage } from '@/pages/ProductDetailPage';
@@ -157,7 +157,16 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background max-w-lg mx-auto relative">
       <AnimatePresence mode="wait">
-        {renderContent()}
+        <motion.div
+          key={screen.type === 'tabs' ? tab : screen.type}
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.98 }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          className="w-full h-full min-h-screen"
+        >
+          {renderContent()}
+        </motion.div>
       </AnimatePresence>
       {screen.type === 'tabs' && (
         <BottomNav active={tab} onChange={(t) => setTab(t)} />
