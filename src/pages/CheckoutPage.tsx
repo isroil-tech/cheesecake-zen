@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   ArrowLeft, Loader2, AlertCircle, Phone, Building2,
-  User, MapPin, Navigation, Map, X,
+  User, MapPin, Navigation, Map, X, History,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -52,12 +52,34 @@ export function CheckoutPage({ telegramId, onBack, onPayment }: CheckoutPageProp
   // Profile — autofilled from bot
   const [userPhone, setUserPhone] = useState('');
   const [userName, setUserName] = useState('');
+  const [extraPhone, setExtraPhone] = useState('');
   const [profileLoaded, setProfileLoaded] = useState(false);
+  const [recentLocations, setRecentLocations] = useState<Array<{address:string, lat:number, lon:number}>>([]);
 
-  // Fetch profile using all tgId sources
+  // Fetch recent locations from localStorage
   useEffect(() => {
-    const tgId = resolveTelegramId(telegramId);
-    if (!tgId) return;
+    try {
+      const saved = JSON.parse(localStorage.getItem('recent_locations') || '[]');
+      if (Array.isArray(saved)) setRecentLocations(saved.slice(0, 3));
+    } catch {}
+  }, []);
+
+  // Fetch profile — try immediately from all sources, retry when prop changes
+  useEffect(() => {
+    const tgWebApp = window.Telegram?.WebApp?.initDataUnsafe?.user;
+    // Immediate fallback from Telegram WebApp (available right away)
+    if (tgWebApp?.first_name) {
+      setUserName(tgWebApp.first_name + (tgWebApp.last_name ? ' ' + tgWebApp.last_name : ''));
+    }
+
+    const tgId =
+      (telegramId && !telegramId.startsWith('guest-') ? telegramId : null) ||
+      tgWebApp?.id?.toString() ||
+      new URLSearchParams(window.location.search).get('uid') ||
+      localStorage.getItem('guest_telegram_id') ||
+      telegramId;
+
+    if (!tgId) { setProfileLoaded(true); return; }
     const load = async () => {
       try {
         const res = await fetch('/api/v1/users/me', {
@@ -66,6 +88,7 @@ export function CheckoutPage({ telegramId, onBack, onPayment }: CheckoutPageProp
         if (res.ok) {
           const data = await res.json();
           if (data && !data.error) {
+            // DB has more accurate name (from bot registration)
             if (data.firstName) setUserName(data.firstName + (data.lastName ? ' ' + data.lastName : ''));
             if (data.phone) setUserPhone(data.phone);
           }
@@ -74,7 +97,7 @@ export function CheckoutPage({ telegramId, onBack, onPayment }: CheckoutPageProp
       setProfileLoaded(true);
     };
     load();
-  }, [telegramId]);
+  }, [telegramId]); // runs on mount AND when telegramId prop finally arrives
 
   // ─── GPS via Telegram LocationManager or browser geolocation ───────────
   const handleSendLocation = () => {
@@ -171,6 +194,7 @@ export function CheckoutPage({ telegramId, onBack, onPayment }: CheckoutPageProp
     setError('');
 
     const tgId = resolveTelegramId(telegramId) || `guest-${Date.now()}`;
+    console.log('[Checkout] tgId:', tgId, 'items:', items.length);
 
     try {
       if (userName || userPhone) {
@@ -190,6 +214,7 @@ export function CheckoutPage({ telegramId, onBack, onPayment }: CheckoutPageProp
           latitude: deliveryType === 'delivery' ? latitude : undefined,
           longitude: deliveryType === 'delivery' ? longitude : undefined,
           floor: deliveryType === 'delivery' ? (floor || undefined) : undefined,
+          extraPhone: extraPhone || undefined,
           comment: comment || undefined,
           items: items.map((i) => ({
             productId: i.productId,
@@ -201,12 +226,30 @@ export function CheckoutPage({ telegramId, onBack, onPayment }: CheckoutPageProp
         }),
       });
 
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || `HTTP ${res.status}`);
-      }
       const order = await res.json();
+      console.log('[Checkout] response:', res.status, order);
+
+      if (!res.ok) {
+        const msg = Array.isArray(order?.message)
+          ? order.message.join(', ')
+          : order?.message || order?.error || `Server xatosi: HTTP ${res.status}`;
+        setError(msg);
+        setLoading(false);
+        return;
+      }
+
       if (order.id) {
+        if (deliveryType === 'delivery' && latitude && longitude && address) {
+          try {
+            let saved = JSON.parse(localStorage.getItem('recent_locations') || '[]');
+            saved = saved.filter((s:any) => s.address !== address);
+            saved.unshift({ address, lat: latitude, lon: longitude });
+            if (saved.length > 3) saved.pop();
+            localStorage.setItem('recent_locations', JSON.stringify(saved));
+            setRecentLocations(saved);
+          } catch {}
+        }
+        
         addOrder({ items: [...items], total: getTotalPrice(), deliveryType,
           address: deliveryType === 'delivery' ? address : undefined,
           comment: comment || undefined });
@@ -214,17 +257,20 @@ export function CheckoutPage({ telegramId, onBack, onPayment }: CheckoutPageProp
         clearCart();
         onPayment(order.id, order.orderNumber, total);
       } else {
-        setError(order.error || (language === 'ru' ? 'Ошибка создания заказа' : 'Buyurtma yaratishda xatolik'));
+        setError(order.error || 'Buyurtma yaratishda xatolik');
       }
     } catch (err: any) {
-      setError(language === 'ru'
-        ? 'Не удалось отправить заказ. Проверьте интернет.'
-        : 'Buyurtmani yuborib bo\'lmadi. Internetni tekshiring.');
+      console.error('[Checkout] error:', err);
+      setError(`Xatolik: ${err?.message || 'tarmoqni tekshiring'}`);
     }
     setLoading(false);
   };
 
-  // Map iframe HTML with Leaflet
+
+
+  // Map iframe HTML with Leaflet — starts at user's current location
+  const initLat = latitude || 41.299496;
+  const initLon = longitude || 69.240073;
   const mapHtml = `<!DOCTYPE html>
 <html>
 <head>
@@ -238,27 +284,58 @@ export function CheckoutPage({ telegramId, onBack, onPayment }: CheckoutPageProp
 #hint{position:fixed;top:12px;left:50%;transform:translateX(-50%);
   background:rgba(0,0,0,.6);color:#fff;padding:8px 16px;border-radius:20px;
   font-size:13px;z-index:9999;white-space:nowrap}
+#locbtn{position:fixed;bottom:80px;right:16px;
+  background:#fff;border:none;width:44px;height:44px;border-radius:50%;
+  box-shadow:0 2px 8px rgba(0,0,0,.3);z-index:9999;cursor:pointer;font-size:20px}
 </style>
 </head>
 <body>
-<div id="hint">Xaritaga bosing, keyin ✅ Tanlash</div>
+<div id="hint">Xaritaga bosing → ✅ Tanlash</div>
 <div id="map"></div>
 <button id="btn" style="display:none">✅ Tanlash</button>
+<button id="locbtn" title="Mening lokatsiyam">📍</button>
 <script>
-var map = L.map('map').setView([41.299496, 69.240073], 13);
+var initLat = ${initLat}, initLon = ${initLon};
+var map = L.map('map').setView([initLat, initLon], ${latitude ? 16 : 13});
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:''}).addTo(map);
-var marker = null;
-var lat = null, lon = null, label = '';
+var marker = ${latitude ? `L.marker([${initLat}, ${initLon}]).addTo(map)` : 'null'};
+var lat = ${latitude || 'null'}, lon = ${longitude || 'null'}, label = '';
+
+// Try to get user's real location on load
+if(navigator.geolocation && !${!!latitude}) {
+  navigator.geolocation.getCurrentPosition(function(pos){
+    var lt=pos.coords.latitude, ln=pos.coords.longitude;
+    map.setView([lt, ln], 16);
+    if(!marker){ marker = L.marker([lt, ln]).addTo(map); }
+    else { marker.setLatLng([lt, ln]); }
+    lat=lt; lon=ln;
+    document.getElementById('btn').style.display='block';
+  }, null, {timeout:8000});
+}
+
+document.getElementById('locbtn').onclick = function(){
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(function(pos){
+      var lt=pos.coords.latitude, ln=pos.coords.longitude;
+      map.setView([lt, ln], 16);
+      if(!marker){ marker = L.marker([lt, ln]).addTo(map); }
+      else { marker.setLatLng([lt, ln]); }
+      lat=lt; lon=ln;
+      document.getElementById('btn').style.display='block';
+    });
+  }
+};
+
 map.on('click', async function(e){
   lat = e.latlng.lat; lon = e.latlng.lng;
   if(marker) marker.setLatLng(e.latlng);
   else marker = L.marker(e.latlng).addTo(map);
   document.getElementById('btn').style.display='block';
   try {
-    const r = await fetch('https://nominatim.openstreetmap.org/reverse?lat='+lat+'&lon='+lon+'&format=json');
+    const r = await fetch('https://nominatim.openstreetmap.org/reverse?lat='+lat+'&lon='+lon+'&format=json&accept-language=uz');
     const d = await r.json();
-    label = d.display_name || (lat.toFixed(5)+', '+lon.toFixed(5));
-  } catch(e){ label = lat.toFixed(5)+', '+lon.toFixed(5); }
+    label = d.display_name || '';
+  } catch(e){ label = ''; }
 });
 document.getElementById('btn').onclick = function(){
   window.parent.postMessage({type:'MAP_PICK',lat:lat,lon:lon,label:label},'*');
@@ -266,6 +343,7 @@ document.getElementById('btn').onclick = function(){
 </script>
 </body>
 </html>`;
+
 
   return (
     <motion.div
@@ -300,6 +378,7 @@ document.getElementById('btn').onclick = function(){
               srcDoc={mapHtml}
               className="flex-1 w-full border-none"
               title="map"
+              allow="geolocation"
             />
           </motion.div>
         )}
@@ -315,38 +394,66 @@ document.getElementById('btn').onclick = function(){
 
       <div className="px-5 space-y-6">
 
-        {/* ── Ism va telefon (autofill from bot) ── */}
-        <div className="space-y-3">
-          <div>
-            <label className="text-sm font-medium text-foreground flex items-center gap-2 mb-2">
-              <User className="w-4 h-4 text-primary" />
-              {language === 'ru' ? 'Имя и фамилия' : 'Ism familiya'}
-            </label>
-            <input
-              type="text"
-              value={userName}
-              onChange={(e) => setUserName(e.target.value)}
-              placeholder={profileLoaded
-                ? (language === 'ru' ? 'Ваше имя' : 'Ismingiz')
-                : (language === 'ru' ? 'Загрузка...' : 'Yuklanmoqda...')}
-              className="w-full px-4 py-3.5 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30 transition-all"
-            />
+        {/* ── Ism va telefon (botdan avtomatik) ── */}
+        <div className="rounded-2xl bg-secondary/60 border border-border/50 overflow-hidden">
+          {/* Sarlavha */}
+          <div className="px-4 pt-3 pb-2 flex items-center gap-2 border-b border-border/30">
+            <User className="w-4 h-4 text-primary" />
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              {language === 'ru' ? 'Контактные данные' : 'Aloqa ma\'lumotlari'}
+            </span>
           </div>
-          <div>
-            <label className="text-sm font-medium text-foreground flex items-center gap-2 mb-2">
-              <Phone className="w-4 h-4 text-primary" />
-              {language === 'ru' ? 'Телефон номер' : 'Telefon raqam'}
-            </label>
-            <input
-              type="tel"
-              value={userPhone}
-              onChange={(e) => setUserPhone(e.target.value)}
-              placeholder={profileLoaded
-                ? '+998 ...'
-                : (language === 'ru' ? 'Загрузка...' : 'Yuklanmoqda...')}
-              className="w-full px-4 py-3.5 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30 transition-all"
-            />
+
+          {/* Ism */}
+          <div className="px-4 py-3 flex items-center gap-3 border-b border-border/20">
+            <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+              <User className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-[11px] text-muted-foreground mb-0.5">
+                {language === 'ru' ? 'Имя' : 'Ism'}
+              </p>
+              {!profileLoaded
+                ? <p className="text-sm font-medium text-muted-foreground animate-pulse">{language === 'ru' ? 'Загрузка...' : 'Yuklanmoqda...'}</p>
+                : <p className="text-sm font-semibold text-foreground">
+                    {userName || <span className="text-muted-foreground font-normal">{language === 'ru' ? 'Не указано' : 'Ko\'rsatilmagan'}</span>}
+                  </p>
+              }
+            </div>
           </div>
+
+          {/* Telefon */}
+          <div className="px-4 py-3 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+              <Phone className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-[11px] text-muted-foreground mb-0.5">
+                {language === 'ru' ? 'Телефон' : 'Telefon'}
+              </p>
+              {!profileLoaded
+                ? <p className="text-sm font-medium text-muted-foreground animate-pulse">{language === 'ru' ? 'Загрузка...' : 'Yuklanmoqda...'}</p>
+                : <p className="text-sm font-semibold text-foreground">
+                    {userPhone || <span className="text-muted-foreground font-normal">{language === 'ru' ? 'Не указано' : 'Ko\'rsatilmagan'}</span>}
+                  </p>
+              }
+            </div>
+          </div>
+        </div>
+
+        {/* Qo'shimcha raqam */}
+        <div>
+          <label className="text-sm font-medium text-foreground flex items-center gap-2 mb-2">
+            <Phone className="w-4 h-4 text-muted-foreground" />
+            {language === 'ru' ? 'Доп. номер (необязательно)' : "Qo'shimcha raqam (ixtiyoriy)"}
+          </label>
+          <input
+            type="tel"
+            value={extraPhone}
+            onChange={(e) => setExtraPhone(e.target.value)}
+            placeholder="+998 ..."
+            className="w-full px-4 py-3.5 rounded-xl bg-secondary text-foreground text-sm placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-primary/30 transition-all"
+          />
         </div>
 
         {/* ── Yetkazish / Olib ketish ── */}
@@ -401,7 +508,7 @@ document.getElementById('btn').onclick = function(){
               {latitude && longitude && (
                 <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
                   <Navigation className="w-3 h-3" />
-                  {latitude.toFixed(5)}, {longitude.toFixed(5)}
+                  {language === 'ru' ? 'Локация определена ✓' : 'Joylashuv aniqlandi ✓'}
                 </p>
               )}
 
@@ -428,8 +535,33 @@ document.getElementById('btn').onclick = function(){
                 </button>
               </div>
 
+              {recentLocations.length > 0 && (
+                <div className="pt-2 space-y-2">
+                  <p className="text-[13px] font-medium text-muted-foreground whitespace-nowrap overflow-hidden">
+                    {language === 'ru' ? 'Недавние адреса' : "Oxirgi manzillar"}
+                  </p>
+                  <div className="space-y-1.5 flex flex-col items-stretch">
+                    {recentLocations.map((loc, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => {
+                          setLatitude(loc.lat);
+                          setLongitude(loc.lon);
+                          setAddress(loc.address);
+                        }}
+                        className="w-full bg-secondary hover:bg-secondary/80 py-3 px-4 rounded-xl flex items-center gap-3 active-scale text-left border border-border/50 transition-colors"
+                      >
+                        <History className="w-4 h-4 text-muted-foreground shrink-0" />
+                        <span className="text-sm text-foreground font-medium truncate leading-normal flex-1">{loc.address}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Qavat */}
-              <div>
+              <div className="pt-2">
                 <label className="text-sm font-medium text-foreground flex items-center gap-2 mb-2">
                   <Building2 className="w-4 h-4" />
                   {language === 'ru' ? 'Этаж / квартира' : 'Qavat / xonadon'}
@@ -443,6 +575,7 @@ document.getElementById('btn').onclick = function(){
                 />
               </div>
             </motion.div>
+
           )}
         </AnimatePresence>
 

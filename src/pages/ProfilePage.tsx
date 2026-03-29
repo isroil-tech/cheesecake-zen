@@ -15,7 +15,11 @@ export function ProfilePage({ onNavigateOrders }: ProfilePageProps) {
 
   const tg = window.Telegram?.WebApp;
   const tgUser = tg?.initDataUnsafe?.user;
-  const telegramId = tgUser?.id?.toString() || localStorage.getItem('guest_telegram_id') || '';
+  const telegramId =
+    tgUser?.id?.toString() ||
+    new URLSearchParams(window.location.search).get('uid') ||
+    localStorage.getItem('guest_telegram_id') ||
+    '';
 
   const [userName, setUserName] = useState(
     tgUser ? `${tgUser.first_name || ''} ${tgUser.last_name || ''}`.trim() || 'User' : 'User'
@@ -126,13 +130,6 @@ export function ProfilePage({ onNavigateOrders }: ProfilePageProps) {
             <span className="text-sm font-medium text-foreground flex-1">{t('profile.orderHistory')}</span>
             <ChevronRight className="w-4 h-4 text-muted-foreground" />
           </button>
-          <div className="px-5 py-4 flex items-center gap-3">
-            <MapPin className="w-5 h-5 text-muted-foreground" />
-            <div className="flex-1">
-              <span className="text-sm font-medium text-foreground">{t('profile.addresses')}</span>
-              <p className="text-xs text-muted-foreground mt-0.5">{t('profile.noAddresses')}</p>
-            </div>
-          </div>
         </div>
       </div>
     </div>
