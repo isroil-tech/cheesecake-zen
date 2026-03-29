@@ -16,7 +16,7 @@ export function ProfilePage({ onNavigateOrders }: ProfilePageProps) {
   const tg = window.Telegram?.WebApp;
   const tgUser = tg?.initDataUnsafe?.user;
   const telegramId =
-    tgUser?.id?.toString() ||
+    (typeof window !== 'undefined' && window.Telegram?.WebApp?.initDataUnsafe?.user?.id?.toString()) ||
     new URLSearchParams(window.location.search).get('uid') ||
     localStorage.getItem('guest_telegram_id') ||
     '';
@@ -27,19 +27,25 @@ export function ProfilePage({ onNavigateOrders }: ProfilePageProps) {
   const [userPhone, setUserPhone] = useState('');
 
   useEffect(() => {
-    if (!telegramId) return;
-    fetch('/api/v1/users/me', {
-      headers: { 'x-telegram-id': telegramId },
-    })
-      .then(r => r.ok ? r.json() : null)
-      .then(d => {
-        if (d && !d.error) {
-          const name = [d.firstName, d.lastName].filter(Boolean).join(' ').trim();
-          if (name) setUserName(name);
-          if (d.phone) setUserPhone(d.phone);
+    let active = true;
+    const fetchMe = async () => {
+      if (!telegramId) return;
+      try {
+        const r = await fetch('/api/v1/users/me', {
+          headers: { 'x-telegram-id': telegramId },
+        });
+        if (r.ok) {
+          const d = await r.json();
+          if (active && d && !d.error) {
+            const name = [d.firstName, d.lastName].filter(Boolean).join(' ').trim();
+            if (name) setUserName(name);
+            if (d.phone) setUserPhone(d.phone);
+          }
         }
-      })
-      .catch(() => {});
+      } catch (e) {}
+    };
+    fetchMe();
+    return () => { active = false; };
   }, [telegramId]);
 
   return (
