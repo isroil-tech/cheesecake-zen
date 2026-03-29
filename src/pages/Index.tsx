@@ -11,7 +11,7 @@ import { ProfilePage } from '@/pages/ProfilePage';
 import { AuthPage } from '@/pages/AuthPage';
 import { supabase } from '@/integrations/supabase/client';
 import type { Session } from '@supabase/supabase-js';
-import type { Product } from '@/data/products';
+import type { Product } from '@/types/products';
 import { useCatalogStore } from '@/stores/catalogStore';
 
 type Tab = 'home' | 'cart' | 'orders' | 'profile';

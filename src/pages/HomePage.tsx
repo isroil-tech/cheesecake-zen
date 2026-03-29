@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { type Product } from '@/data/products';
+import { type Product } from '@/types/products';
 import { ProductCard } from '@/components/ProductCard';
 import { useCatalogStore } from '@/stores/catalogStore';
 

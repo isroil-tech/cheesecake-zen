@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { CreditCard, Banknote, Upload, Check, Loader2, Copy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
-import { formatPrice } from '@/data/products';
+import { formatPrice } from '@/types/products';
 import { SuccessAnimation } from '@/components/SuccessAnimation';
 
 interface PaymentPageProps {

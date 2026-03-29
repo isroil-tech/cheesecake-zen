@@ -2,7 +2,7 @@ import { Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useCartStore } from '@/stores/cartStore';
-import { formatPrice } from '@/data/products';
+import { formatPrice } from '@/types/products';
 import { QuantitySelector } from '@/components/QuantitySelector';
 import { ShoppingBag } from 'lucide-react';
 

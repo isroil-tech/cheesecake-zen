@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ArrowLeft, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
-import { formatPrice, type Product } from '@/data/products';
+import { formatPrice, type Product } from '@/types/products';
 import { useCartStore, type ProductFormat } from '@/stores/cartStore';
 import { FormatPicker } from '@/components/FormatPicker';
 import { QuantitySelector } from '@/components/QuantitySelector';

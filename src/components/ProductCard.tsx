@@ -1,7 +1,7 @@
 import { Plus } from 'lucide-react';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useCartStore } from '@/stores/cartStore';
-import { formatPrice, type Product } from '@/data/products';
+import { formatPrice, type Product } from '@/types/products';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { useState } from 'react';

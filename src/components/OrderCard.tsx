@@ -1,5 +1,5 @@
 import { useTranslation } from '@/i18n/useTranslation';
-import { formatPrice } from '@/data/products';
+import { formatPrice } from '@/types/products';
 import type { Order, OrderStatus } from '@/stores/orderStore';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';

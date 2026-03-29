@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Product } from '@/data/products';
+import { Product } from '@/types/products';
 
 export interface Category {
   id: string;

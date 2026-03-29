@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
 import { useCartStore } from '@/stores/cartStore';
 import { useOrderStore } from '@/stores/orderStore';
-import { formatPrice } from '@/data/products';
+import { formatPrice } from '@/types/products';
 
 interface CheckoutPageProps {
   telegramId: string;
