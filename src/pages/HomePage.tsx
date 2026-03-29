@@ -26,7 +26,7 @@ export function HomePage({ onProductTap }: HomePageProps) {
     <div className="pb-20">
       {/* Header */}
       <div className="px-5 pt-12 pb-2">
-        <h1 className="text-[28px] font-bold text-foreground tracking-tight">77Cheesecake</h1>
+        <h1 className="text-[28px] font-bold text-foreground tracking-tight">77CHEESECAKE</h1>
         <p className="text-sm text-muted-foreground mt-0.5">{t('tagline')}</p>
       </div>
 
