@@ -5,6 +5,7 @@ export type ProductFormat = 'whole' | 'slice';
 
 export interface CartItem {
   productId: string;
+  productVariantId?: string;
   format: ProductFormat;
   quantity: number;
   pricePerUnit: number;

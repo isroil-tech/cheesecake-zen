@@ -1,26 +1,21 @@
 import { useState } from 'react';
 import { useTranslation } from '@/i18n/useTranslation';
-import { products, type Product } from '@/data/products';
+import { type Product } from '@/data/products';
 import { ProductCard } from '@/components/ProductCard';
-
-type Category = 'all' | 'classic' | 'fruit' | 'special';
+import { useCatalogStore } from '@/stores/catalogStore';
 
 interface HomePageProps {
   onProductTap: (product: Product) => void;
 }
 
 export function HomePage({ onProductTap }: HomePageProps) {
-  const { t } = useTranslation();
-  const [category, setCategory] = useState<Category>('all');
+  const { t, language } = useTranslation();
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const { products, categories, isLoading } = useCatalogStore();
 
-  const categories: { key: Category; label: string }[] = [
-    { key: 'all', label: t('home.categories.all') },
-    { key: 'classic', label: t('home.categories.classic') },
-    { key: 'fruit', label: t('home.categories.fruit') },
-    { key: 'special', label: t('home.categories.special') },
-  ];
-
-  const filtered = category === 'all' ? products : products.filter((p) => p.category === category);
+  const filtered = selectedCategory === 'all' 
+    ? products 
+    : products.filter((p) => p.category === selectedCategory);
 
   return (
     <div className="pb-20">
@@ -32,27 +27,47 @@ export function HomePage({ onProductTap }: HomePageProps) {
 
       {/* Category pills */}
       <div className="flex gap-2 px-5 py-4 overflow-x-auto hide-scrollbar">
+        <button
+          onClick={() => setSelectedCategory('all')}
+          className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-200 active-scale ${
+            selectedCategory === 'all'
+              ? 'bg-foreground text-background'
+              : 'bg-secondary text-muted-foreground'
+          }`}
+        >
+          {t('home.categories.all')}
+        </button>
         {categories.map((cat) => (
           <button
-            key={cat.key}
-            onClick={() => setCategory(cat.key)}
+            key={cat.id}
+            onClick={() => setSelectedCategory(cat.id)}
             className={`px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-200 active-scale ${
-              category === cat.key
+              selectedCategory === cat.id
                 ? 'bg-foreground text-background'
                 : 'bg-secondary text-muted-foreground'
             }`}
           >
-            {cat.label}
+            {language === 'ru' ? cat.nameRu : cat.nameUz}
           </button>
         ))}
       </div>
 
       {/* Product grid */}
-      <div className="grid grid-cols-2 gap-3 px-5">
-        {filtered.map((product, i) => (
-          <ProductCard key={product.id} product={product} onTap={onProductTap} index={i} />
-        ))}
-      </div>
+      {isLoading ? (
+        <div className="px-5 text-center py-10 text-muted-foreground text-sm flex items-center justify-center">
+          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          {language === 'ru' ? 'Загрузка каталога...' : 'Katalog yuklanmoqda...'}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 px-5">
+          {filtered.map((product, i) => (
+            <ProductCard key={product.id} product={product} onTap={onProductTap} index={i} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

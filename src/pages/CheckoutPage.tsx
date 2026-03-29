@@ -218,6 +218,7 @@ export function CheckoutPage({ telegramId, onBack, onPayment }: CheckoutPageProp
           comment: comment || undefined,
           items: items.map((i) => ({
             productId: i.productId,
+            productVariantId: i.productVariantId,
             name: i.name,
             format: i.format,
             quantity: i.quantity,

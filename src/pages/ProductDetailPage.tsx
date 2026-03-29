@@ -31,6 +31,7 @@ export function ProductDetailPage({ product, onBack }: ProductDetailProps) {
   const handleAdd = () => {
     addItem({
       productId: product.id,
+      productVariantId: format === 'whole' ? product.wholeVariantId : product.sliceVariantId,
       format,
       quantity,
       pricePerUnit: price,

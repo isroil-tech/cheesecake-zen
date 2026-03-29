@@ -12,6 +12,7 @@ import { AuthPage } from '@/pages/AuthPage';
 import { supabase } from '@/integrations/supabase/client';
 import type { Session } from '@supabase/supabase-js';
 import type { Product } from '@/data/products';
+import { useCatalogStore } from '@/stores/catalogStore';
 
 type Tab = 'home' | 'cart' | 'orders' | 'profile';
 type Screen =
@@ -26,8 +27,10 @@ const Index = () => {
   const [screen, setScreen] = useState<Screen>({ type: 'tabs' });
   const [telegramId, setTelegramId] = useState<string>('');
   const [session, setSession] = useState<Session | null>(null);
+  const fetchCatalog = useCatalogStore(s => s.fetchCatalog);
 
   useEffect(() => {
+    fetchCatalog();
     // Get Supabase session
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const { data: listener } = supabase.auth.onAuthStateChange((_event, sess) => {

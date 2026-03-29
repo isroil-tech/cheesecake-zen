@@ -26,6 +26,7 @@ export function ProductCard({ product, onTap, index }: ProductCardProps) {
     if (isOutOfStock) return;
     addItem({
       productId: product.id,
+      productVariantId: defaultFormat === 'whole' ? product.wholeVariantId : product.sliceVariantId,
       format: defaultFormat as 'whole' | 'slice',
       quantity: 1,
       pricePerUnit: defaultPrice,
