@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   ArrowLeft, Loader2, AlertCircle, Phone, Building2,
-  User, MapPin, Navigation, Map, X, History,
+  User, MapPin, Navigation, Map, X, History, Instagram,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from '@/i18n/useTranslation';
@@ -571,6 +571,48 @@ document.getElementById('btn').onclick = function(){
               </div>
             </motion.div>
 
+          )}
+          {deliveryType === 'pickup' && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              className="overflow-hidden"
+            >
+              <div className="bg-secondary/40 rounded-xl p-4 border border-border">
+                <div className="space-y-3.5">
+                  <div className="flex items-start gap-3">
+                    <MapPin className="w-4 h-4 text-primary mt-0.5" />
+                    <div>
+                      <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{language === 'ru' ? 'Адрес' : 'Manzil'}</p>
+                      <p className="text-sm font-semibold text-foreground mt-0.5">Tashkent City, Park in Mall 4-qavat</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <Phone className="w-4 h-4 text-primary mt-0.5" />
+                    <div>
+                      <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">{language === 'ru' ? 'Телефон' : 'Telefon'}</p>
+                      <p className="text-sm font-semibold text-foreground mt-0.5">+998 94 081 34 31</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Instagram className="w-4 h-4 text-primary mt-0.5" />
+                    <div>
+                      <p className="text-[11px] text-muted-foreground uppercase tracking-wider font-medium">Instagram</p>
+                      <p className="text-sm font-semibold text-foreground mt-0.5">@77cheesecake.uz</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <img src="/store1.jpg" alt="77CHEESECAKE tashqarisi" className="w-full h-32 object-cover rounded-lg border border-border/50" />
+                  <img src="/store2.jpg" alt="77CHEESECAKE ichkarisi" className="w-full h-32 object-cover rounded-lg border border-border/50" />
+                </div>
+              </div>
+            </motion.div>
           )}
         </AnimatePresence>
 
