@@ -50,8 +50,12 @@ const Index = () => {
     const user = tg?.initDataUnsafe?.user;
     let tgId: string;
 
+    const urlUid = new URLSearchParams(window.location.search).get('uid');
+
     if (user?.id) {
       tgId = user.id.toString();
+    } else if (urlUid) {
+      tgId = urlUid;
     } else {
       const stored = localStorage.getItem('guest_telegram_id');
       if (stored) {

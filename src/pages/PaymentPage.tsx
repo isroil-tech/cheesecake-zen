@@ -14,8 +14,8 @@ interface PaymentPageProps {
 }
 
 export function PaymentPage({ telegramId, orderId, orderNumber, total, onSuccess }: PaymentPageProps) {
-  const { t } = useTranslation();
-  const [paymentType, setPaymentType] = useState<'cash' | 'card'>('cash');
+  const { t, language } = useTranslation();
+  const [paymentType] = useState<'card'>('card');
   const [screenshot, setScreenshot] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -88,53 +88,34 @@ export function PaymentPage({ telegramId, orderId, orderNumber, total, onSuccess
           <div>
             <h3 className="text-sm font-medium text-foreground mb-3">{t('payment.method')}</h3>
             <div className="space-y-3">
-              <button
-                onClick={() => setPaymentType('cash')}
-                className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all duration-200 active-scale ${
-                  paymentType === 'cash'
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border bg-secondary'
-                }`}
-              >
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                  paymentType === 'cash' ? 'bg-primary/10' : 'bg-muted'
-                }`}>
-                  <Banknote className={`w-6 h-6 ${paymentType === 'cash' ? 'text-primary' : 'text-muted-foreground'}`} />
+              {/* Cash — disabled */}
+              <div className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-border bg-secondary/40 opacity-60 cursor-not-allowed">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-muted">
+                  <Banknote className="w-6 h-6 text-muted-foreground" />
                 </div>
                 <div className="text-left flex-1">
-                  <p className="font-semibold text-foreground">{t('payment.cash')}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{t('payment.cashDesc')}</p>
+                  <p className="font-semibold text-muted-foreground line-through">{t('payment.cash')}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {language === 'ru'
+                      ? 'Временно недоступно — оплатите онлайн'
+                      : 'Hozircha mavjud emas — oldindan online to\'lov qiling'}
+                  </p>
                 </div>
-                {paymentType === 'cash' && (
-                  <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-                    <Check className="w-4 h-4 text-primary-foreground" />
-                  </div>
-                )}
-              </button>
+              </div>
 
-              <button
-                onClick={() => setPaymentType('card')}
-                className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all duration-200 active-scale ${
-                  paymentType === 'card'
-                    ? 'border-primary bg-primary/5'
-                    : 'border-border bg-secondary'
-                }`}
-              >
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                  paymentType === 'card' ? 'bg-primary/10' : 'bg-muted'
-                }`}>
-                  <CreditCard className={`w-6 h-6 ${paymentType === 'card' ? 'text-primary' : 'text-muted-foreground'}`} />
+              {/* Card — always selected */}
+              <div className="w-full flex items-center gap-4 p-4 rounded-2xl border-2 border-primary bg-primary/5">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-primary/10">
+                  <CreditCard className="w-6 h-6 text-primary" />
                 </div>
                 <div className="text-left flex-1">
                   <p className="font-semibold text-foreground">{t('payment.card')}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">{t('payment.cardDesc')}</p>
                 </div>
-                {paymentType === 'card' && (
-                  <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-                    <Check className="w-4 h-4 text-primary-foreground" />
-                  </div>
-                )}
-              </button>
+                <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                  <Check className="w-4 h-4 text-primary-foreground" />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -152,7 +133,7 @@ export function PaymentPage({ telegramId, orderId, orderNumber, total, onSuccess
                 <div className="bg-secondary rounded-2xl p-4 text-center">
                   <p className="text-xs text-muted-foreground mb-2">{t('payment.cardNumber')}</p>
                   <p className="text-2xl font-bold text-foreground tracking-widest font-mono">
-                    {cardNumber}
+                    {cardNumber.replace(/\s/g, '').replace(/(.{4})/g, '$1 ').trim()}
                   </p>
                   <p className="text-xs text-muted-foreground mt-2">{cardHolder}</p>
                 </div>
