@@ -48,6 +48,8 @@ const Index = () => {
     if (tg) {
       tg.ready();
       tg.expand();
+      // @ts-ignore
+      tg.disableVerticalSwipes?.();
     }
 
     const user = tg?.initDataUnsafe?.user;
