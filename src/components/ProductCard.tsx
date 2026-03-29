@@ -41,7 +41,7 @@ export function ProductCard({ product, onTap, index }: ProductCardProps) {
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05, duration: 0.3 }}
+      transition={{ delay: index * 0.05, type: 'spring', stiffness: 400, damping: 30 }}
       className={cn(
         'relative flex flex-col bg-card rounded-2xl overflow-hidden card-shadow active-scale cursor-pointer',
         isOutOfStock && 'opacity-50'

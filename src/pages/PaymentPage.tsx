@@ -69,10 +69,10 @@ export function PaymentPage({ telegramId, orderId, orderNumber, total, onSuccess
   return (
     <>
       <motion.div
-        initial={{ opacity: 0, x: 40 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: 40 }}
-        transition={{ duration: 0.25 }}
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         className="min-h-screen bg-background pb-32"
       >
         {/* Header */}

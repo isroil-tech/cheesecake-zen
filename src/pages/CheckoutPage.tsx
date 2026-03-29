@@ -348,10 +348,10 @@ document.getElementById('btn').onclick = function(){
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 40 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 40 }}
-      transition={{ duration: 0.25 }}
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       className="min-h-screen bg-background pb-32"
     >
       {/* Inline map modal */}
@@ -484,7 +484,7 @@ document.getElementById('btn').onclick = function(){
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
               className="overflow-hidden space-y-3"
             >
               <label className="text-sm font-medium text-foreground flex items-center gap-2">

@@ -39,7 +39,7 @@ export function CartPage({ onCheckout }: CartPageProps) {
               key={`${item.productId}-${item.format}`}
               layout
               exit={{ opacity: 0, x: -100 }}
-              transition={{ duration: 0.2 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
               className="flex gap-3 p-3 bg-card rounded-2xl card-shadow"
             >
               <div className="w-16 h-16 rounded-xl overflow-hidden bg-secondary flex-shrink-0">

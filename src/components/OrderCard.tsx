@@ -32,7 +32,7 @@ export function OrderCard({ order, index }: OrderCardProps) {
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05, duration: 0.3 }}
+      transition={{ delay: index * 0.05, type: 'spring', stiffness: 400, damping: 30 }}
       className="bg-card rounded-2xl p-4 card-shadow"
     >
       <div className="flex items-center justify-between mb-2">
